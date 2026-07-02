@@ -1,0 +1,70 @@
+{
+ "charts": [
+  {
+   "chart_name": "Files by Navision Status",
+   "label": "Files by Navision Status"
+  }
+ ],
+ "content": "[{\"type\": \"number_card\", \"data\": {\"number_card_name\": \"PSS \\u2014 Total Files (2026)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"PSS \\u2014 Active Files\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"PSS \\u2014 Open Files\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"PSS \\u2014 Actual Revenue (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"PSS \\u2014 2026 Cost (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"PSS \\u2014 2026 Margin (XAF)\", \"col\": 3}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Files by Navision Status\", \"col\": 6}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"AMT Job File\", \"col\": 3}}]",
+ "creation": "2026-06-26 17:59:24.488825",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "AMT PSS",
+ "links": [],
+ "modified": "2026-06-26 17:59:24.488825",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT PSS",
+ "number_cards": [
+  {
+   "label": "PSS \u2014 Total Files (2026)",
+   "number_card_name": "PSS \u2014 Total Files (2026)"
+  },
+  {
+   "label": "PSS \u2014 Active Files",
+   "number_card_name": "PSS \u2014 Active Files"
+  },
+  {
+   "label": "PSS \u2014 Open Files",
+   "number_card_name": "PSS \u2014 Open Files"
+  },
+  {
+   "label": "PSS \u2014 Actual Revenue (XAF)",
+   "number_card_name": "PSS \u2014 Actual Revenue (XAF)"
+  },
+  {
+   "label": "PSS \u2014 2026 Cost (XAF)",
+   "number_card_name": "PSS \u2014 2026 Cost (XAF)"
+  },
+  {
+   "label": "PSS \u2014 2026 Margin (XAF)",
+   "number_card_name": "PSS \u2014 2026 Margin (XAF)"
+  }
+ ],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "AMT Head of PSS"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 0.0,
+ "shortcuts": [
+  {
+   "doc_view": "",
+   "label": "AMT Job File",
+   "link_to": "AMT Job File",
+   "type": "DocType"
+  }
+ ],
+ "title": "AMT PSS"
+}

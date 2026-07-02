@@ -1,0 +1,99 @@
+{
+ "charts": [
+  {
+   "chart_name": "Files by Operation Type",
+   "label": "Files by Operation Type"
+  },
+  {
+   "chart_name": "Files by Navision Status",
+   "label": "Files by Navision Status"
+  },
+  {
+   "chart_name": "SLA Status Overview",
+   "label": "SLA Status Overview"
+  },
+  {
+   "chart_name": "Files by Department",
+   "label": "Files by Department"
+  }
+ ],
+ "content": "[{\"type\": \"number_card\", \"data\": {\"number_card_name\": \"My Open Files\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"SLA Breached\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"SLA Warning\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Files On Track\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Demurrage Running\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Margin Issues\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Invoiced \\u2014 Awaiting Payment\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Actual Cost (XAF)\", \"col\": 3}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Files by Operation Type\", \"col\": 6}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Files by Navision Status\", \"col\": 6}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"SLA Status Overview\", \"col\": 6}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Files by Department\", \"col\": 6}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"AMT Job File\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"AMT Jobs Settings\", \"col\": 3}}]",
+ "creation": "2026-06-18 00:00:00",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "briefcase",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "AMT Jobs",
+ "links": [],
+ "modified": "2026-06-24 07:41:32.145684",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Jobs",
+ "number_cards": [
+  {
+   "label": "My Open Files",
+   "number_card_name": "My Open Files"
+  },
+  {
+   "label": "SLA Breached",
+   "number_card_name": "SLA Breached"
+  },
+  {
+   "label": "SLA Warning",
+   "number_card_name": "SLA Warning"
+  },
+  {
+   "label": "Files On Track",
+   "number_card_name": "Files On Track"
+  },
+  {
+   "label": "Demurrage Running",
+   "number_card_name": "Demurrage Running"
+  },
+  {
+   "label": "Margin Issues",
+   "number_card_name": "Margin Issues"
+  },
+  {
+   "label": "Invoiced \u2014 Awaiting Payment",
+   "number_card_name": "Invoiced \u2014 Awaiting Payment"
+  },
+  {
+   "label": "Total Actual Cost (XAF)",
+   "number_card_name": "Total Actual Cost (XAF)"
+  }
+ ],
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 1.0,
+ "shortcuts": [
+  {
+   "color": "#1F3864",
+   "doc_view": "List",
+   "icon": "briefcase",
+   "label": "AMT Job File",
+   "link_to": "AMT Job File",
+   "type": "DocType"
+  },
+  {
+   "color": "#C9A227",
+   "icon": "settings",
+   "label": "AMT Jobs Settings",
+   "link_to": "AMT Jobs Settings",
+   "type": "DocType"
+  },
+  {
+   "color": "#1F3864",
+   "doc_view": "",
+   "icon": "table",
+   "label": "Demurrage Rate Table",
+   "link_to": "Demurrage Rate",
+   "type": "DocType"
+  }
+ ],
+ "title": "AMT Jobs"
+}

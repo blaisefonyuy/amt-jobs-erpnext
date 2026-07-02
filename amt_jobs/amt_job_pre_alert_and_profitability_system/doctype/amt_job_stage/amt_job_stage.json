@@ -1,0 +1,215 @@
+{
+ "actions": [],
+ "creation": "2026-06-18 10:01:58.753157",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "seq",
+  "stage_name",
+  "stage_cycle",
+  "owner_role",
+  "assigned_user",
+  "date_variable",
+  "date_captured",
+  "data_source",
+  "threshold_green",
+  "threshold_amber",
+  "threshold_red",
+  "days_elapsed",
+  "stage_status",
+  "document_label",
+  "document_attachment",
+  "nas_doc_path",
+  "stage_complete",
+  "completion_blocked",
+  "block_reason",
+  "amber_alert_sent",
+  "red_alert_sent",
+  "last_alert_date",
+  "notes"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "seq",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Seq",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "columns": 3,
+   "fieldname": "stage_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Stage / Milestone",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "stage_cycle",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Cycle",
+   "options": "\nPhase 1 \u2014 Operations\nPhase 2 \u2014 Delivery\nPhase 3 \u2014 Invoicing\nPhase 4 \u2014 Recovery",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "owner_role",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Owner Role",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "assigned_user",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Assigned User"
+  },
+  {
+   "fieldname": "date_variable",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Date Variable Tracked",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "date_captured",
+   "fieldtype": "Date",
+   "label": "Date Captured"
+  },
+  {
+   "columns": 1,
+   "fieldname": "data_source",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Source",
+   "options": "ERPNext\nNavision\nNAS",
+   "read_only": 1
+  },
+  {
+   "fieldname": "threshold_green",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Green (wd)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "threshold_amber",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Amber (wd)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "threshold_red",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Red (wd)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "days_elapsed",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Days Elapsed",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "columns": 1,
+   "default": "Pending",
+   "fieldname": "stage_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nIn Progress\nGreen\nAmber\nRed\nComplete"
+  },
+  {
+   "fieldname": "document_label",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Document Required",
+   "read_only": 1
+  },
+  {
+   "fieldname": "document_attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "fieldname": "nas_doc_path",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "NAS Path",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "stage_complete",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Stage Complete"
+  },
+  {
+   "default": "0",
+   "fieldname": "completion_blocked",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Blocked?",
+   "read_only": 1
+  },
+  {
+   "fieldname": "block_reason",
+   "fieldtype": "Small Text",
+   "label": "Block / Exception Reason"
+  },
+  {
+   "default": "0",
+   "fieldname": "amber_alert_sent",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Amber Sent",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "red_alert_sent",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Red Sent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_alert_date",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Last Alert Sent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-01 20:04:34.233998",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Job Stage",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

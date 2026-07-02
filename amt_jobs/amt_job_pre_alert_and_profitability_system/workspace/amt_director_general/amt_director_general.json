@@ -1,0 +1,133 @@
+{
+ "charts": [
+  {
+   "chart_name": "Files by Department",
+   "label": "Files by Department"
+  },
+  {
+   "chart_name": "Revenue vs Cost by Department",
+   "label": "Revenue vs Cost by Department"
+  },
+  {
+   "chart_name": "Margin by Department",
+   "label": "Margin by Department"
+  },
+  {
+   "chart_name": "Files by Navision Status",
+   "label": "Files by Navision Status"
+  }
+ ],
+ "content": "[{\"type\": \"number_card\", \"data\": {\"number_card_name\": \"2026 \\u2014 Total Files\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Open Files\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"2026 \\u2014 Invoiced Files\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"2026 \\u2014 Files Closed\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Files Breaching SLA\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Demurrage Charges Running\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"2026 \\u2014 Forecast Revenue (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"2026 \\u2014 Actual Revenue (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"2026 \\u2014 Actual Cost (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"2026 \\u2014 Actual Margin (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Invoiced \\u2014 Awaiting Payment\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Invoiced (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Margin Blocked Files\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Demurrage Accrued (XAF)\", \"col\": 3}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Files by Department\", \"col\": 6}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Revenue vs Cost by Department\", \"col\": 6}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Margin by Department\", \"col\": 6}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Files by Navision Status\", \"col\": 6}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"AMT Job File\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DG Annual Overview\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Recovery Aging Report\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Current Year Pipeline\", \"col\": 3}}]",
+ "creation": "2026-06-24 20:47:29.662506",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "bar-chart",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "AMT Director General",
+ "links": [],
+ "modified": "2026-06-26 12:17:18.018257",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Director General",
+ "number_cards": [
+  {
+   "label": "2026 \u2014 Total Files",
+   "number_card_name": "2026 \u2014 Total Files"
+  },
+  {
+   "label": "Total Open Files",
+   "number_card_name": "Total Open Files"
+  },
+  {
+   "label": "2026 \u2014 Invoiced Files",
+   "number_card_name": "2026 \u2014 Invoiced Files"
+  },
+  {
+   "label": "2026 \u2014 Files Closed",
+   "number_card_name": "2026 \u2014 Files Closed"
+  },
+  {
+   "label": "Files Breaching SLA",
+   "number_card_name": "Files Breaching SLA"
+  },
+  {
+   "label": "Demurrage Charges Running",
+   "number_card_name": "Demurrage Charges Running"
+  },
+  {
+   "label": "2026 \u2014 Forecast Revenue (XAF)",
+   "number_card_name": "2026 \u2014 Forecast Revenue (XAF)"
+  },
+  {
+   "label": "2026 \u2014 Actual Revenue (XAF)",
+   "number_card_name": "2026 \u2014 Actual Revenue (XAF)"
+  },
+  {
+   "label": "2026 \u2014 Actual Cost (XAF)",
+   "number_card_name": "2026 \u2014 Actual Cost (XAF)"
+  },
+  {
+   "label": "2026 \u2014 Actual Margin (XAF)",
+   "number_card_name": "2026 \u2014 Actual Margin (XAF)"
+  },
+  {
+   "label": "Invoiced \u2014 Awaiting Payment",
+   "number_card_name": "Invoiced \u2014 Awaiting Payment"
+  },
+  {
+   "label": "Total Invoiced (XAF)",
+   "number_card_name": "Total Invoiced (XAF)"
+  },
+  {
+   "label": "Margin Blocked Files",
+   "number_card_name": "Margin Blocked Files"
+  },
+  {
+   "label": "Total Demurrage Accrued (XAF)",
+   "number_card_name": "Total Demurrage Accrued (XAF)"
+  }
+ ],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "AMT Director General"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 0.0,
+ "shortcuts": [
+  {
+   "doc_view": "",
+   "label": "AMT Job File",
+   "link_to": "AMT Job File",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "DG Annual Overview",
+   "link_to": "AMT DG Annual Overview",
+   "type": "Report"
+  },
+  {
+   "doc_view": "",
+   "label": "Recovery Aging Report",
+   "link_to": "AMT Recovery Aging",
+   "type": "Report"
+  },
+  {
+   "doc_view": "",
+   "label": "Current Year Pipeline",
+   "link_to": "AMT Current Year Pipeline",
+   "type": "Report"
+  }
+ ],
+ "title": "AMT Director General"
+}

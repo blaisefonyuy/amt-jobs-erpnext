@@ -247,3 +247,27 @@ app_license = "mit"
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
 
+# Navision daily sync — runs every day at 06:00
+scheduler_events = {
+    "daily": [
+        "amt_jobs.navision_sync.sync_navision_dates",
+    ],
+    "hourly": [
+        "amt_jobs.server_script.execute",
+    ],
+}
+
+# DocType events
+doc_events = {
+    "AMT Job File": {
+        "on_submit": "amt_jobs.navision_sync.on_submit",
+    }
+}
+
+
+# ── Permission Query Conditions ──────────────────────────────────────────────
+# Automatically filter AMT Job File list based on the user's role
+
+permission_query_conditions = {
+    "AMT Job File": "amt_jobs.permissions.get_permission_query_conditions"
+}

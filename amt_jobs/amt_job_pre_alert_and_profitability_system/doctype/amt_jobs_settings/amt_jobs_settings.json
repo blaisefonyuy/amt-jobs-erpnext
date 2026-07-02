@@ -1,0 +1,121 @@
+{
+  "doctype": "DocType",
+  "name": "AMT Jobs Settings",
+  "module": "AMT Job Pre-Alert and Profitability System",
+  "issingle": 1,
+  "is_virtual": 0,
+  "custom": 0,
+  "track_changes": 0,
+  "fields": [
+    {
+      "fieldname": "sec_sla",
+      "fieldtype": "Section Break",
+      "label": "SLA Deadlines (Working Days)"
+    },
+    {
+      "fieldname": "air_freight_sla_days",
+      "fieldtype": "Int",
+      "label": "Air Freight SLA (days)",
+      "default": "3"
+    },
+    {
+      "fieldname": "col_sla1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "sea_freight_sla_days",
+      "fieldtype": "Int",
+      "label": "Sea Freight SLA (days)",
+      "default": "7"
+    },
+    {
+      "fieldname": "col_sla2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "customs_sla_days",
+      "fieldtype": "Int",
+      "label": "Customs SLA (days)",
+      "default": "3"
+    },
+    {
+      "fieldname": "sec_dem",
+      "fieldtype": "Section Break",
+      "label": "Demurrage"
+    },
+    {
+      "fieldname": "demurrage_free_days",
+      "fieldtype": "Int",
+      "label": "Default Free Period (days)",
+      "default": "5"
+    },
+    {
+      "fieldname": "col_dem1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "demurrage_amber_days",
+      "fieldtype": "Int",
+      "label": "Amber Warning (days before deadline)",
+      "default": "2"
+    },
+    {
+      "fieldname": "sec_margin",
+      "fieldtype": "Section Break",
+      "label": "Margin Gate Thresholds"
+    },
+    {
+      "fieldname": "margin_flag_threshold",
+      "fieldtype": "Percent",
+      "label": "Flag Threshold (%)",
+      "default": "5"
+    },
+    {
+      "fieldname": "col_mg1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "margin_block_threshold",
+      "fieldtype": "Percent",
+      "label": "Block Threshold (%)",
+      "default": "15"
+    },
+    {
+      "fieldname": "sec_alerts",
+      "fieldtype": "Section Break",
+      "label": "Alert Recipients"
+    },
+    {
+      "fieldname": "alert_cc_email",
+      "fieldtype": "Data",
+      "label": "CC all alerts to"
+    },
+    {
+      "fieldname": "col_al1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "send_demurrage_to_finance",
+      "fieldtype": "Check",
+      "label": "Send demurrage alerts to Finance Director",
+      "default": "1"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1
+    },
+    {
+      "role": "AMT Director of Operations",
+      "read": 1,
+      "write": 1
+    },
+    {
+      "role": "AMT Director General",
+      "read": 1,
+      "write": 0
+    }
+  ]
+}

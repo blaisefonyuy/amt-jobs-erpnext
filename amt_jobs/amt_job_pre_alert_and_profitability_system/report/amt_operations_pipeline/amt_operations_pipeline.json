@@ -1,0 +1,15 @@
+{
+ "add_total_row": 0,
+ "doctype": "Report",
+ "is_standard": "Yes",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Operations Pipeline",
+ "ref_doctype": "AMT Job File",
+ "report_name": "AMT Operations Pipeline",
+ "report_type": "Script Report",
+ "roles": [
+  {"role": "AMT Director of Operations"},
+  {"role": "AMT Director General"},
+  {"role": "System Manager"}
+ ]
+}

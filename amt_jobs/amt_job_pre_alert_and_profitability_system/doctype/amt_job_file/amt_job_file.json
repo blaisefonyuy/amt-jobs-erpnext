@@ -1,0 +1,893 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:job_number",
+ "creation": "2026-06-18 10:06:36.359796",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sec_identity",
+  "job_number",
+  "navision_job_ref",
+  "navision_creation_date",
+  "job_title",
+  "col_id1",
+  "department",
+  "freight_type",
+  "job_status",
+  "col_id2",
+  "client",
+  "client_name",
+  "billing_model",
+  "sec_ops",
+  "date_ot_received",
+  "ot_received_proof",
+  "col_ops1",
+  "transit_officer",
+  "col_ops2",
+  "internal_notes",
+  "sec_deadlines",
+  "sla_deadline",
+  "sla_status",
+  "sla_days_remaining",
+  "col_dl1",
+  "demurrage_applicable",
+  "demurrage_free_period_start",
+  "demurrage_deadline",
+  "col_dl2",
+  "demurrage_status",
+  "demurrage_days_overdue",
+  "demurrage_daily_rate",
+  "demurrage_accrued",
+  "sec_margin",
+  "html_margin_note",
+  "forecast_revenue",
+  "col_m1",
+  "forecast_cost",
+  "col_m2",
+  "forecast_margin",
+  "forecast_margin_pct",
+  "forecast_locked_on",
+  "forecast_locked_by",
+  "sec_actual",
+  "actual_revenue",
+  "col_m3",
+  "actual_cost",
+  "col_m4",
+  "actual_margin",
+  "actual_margin_pct",
+  "sec_variance",
+  "margin_variance_pct",
+  "col_m5",
+  "margin_gate_status",
+  "col_m6",
+  "margin_variance_reason",
+  "sec_nas",
+  "nas_folder_path",
+  "sec_stages",
+  "stage_log",
+  "forecast_locked",
+  "arrival_date",
+  "arrival_confirmed_by",
+  "arrival_confirmed_at",
+  "phase1_sla_days",
+  "phase2_sla_days",
+  "phase1_deadline",
+  "phase2_deadline",
+  "sec_transport",
+  "vessel_flight",
+  "col_transport1",
+  "mawb_bl",
+  "col_transport2",
+  "hawb",
+  "eta",
+  "col_transport3",
+  "job_creator_nav",
+  "closing_date_nav",
+  "customs_declaration_no",
+  "arrival_proof"
+ ],
+ "fields": [
+  {
+   "fieldname": "sec_identity",
+   "fieldtype": "Section Break",
+   "label": "\ud83d\udccb Job Identity"
+  },
+  {
+   "bold": 1,
+   "fieldname": "job_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "navision_job_ref",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Navision Reference",
+   "read_only": 1
+  },
+  {
+   "description": "Date the job was created in Navision Dynamics",
+   "fieldname": "navision_creation_date",
+   "fieldtype": "Date",
+   "label": "Job Created in Navision",
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_title",
+   "fieldtype": "Data",
+   "label": "Job Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_id1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "bold": 1,
+   "fieldname": "department",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Department",
+   "options": "Transit\nShipping\nLIMA Oil Base\nLogistics\nPSS",
+   "read_only": 1
+  },
+  {
+   "fieldname": "freight_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Operation Type",
+   "options": "\nAir Freight Import\nAir Freight Export\nSea Freight Import\nSea Freight Export\nSea Freight Groupage\nCustoms Import\nCustoms Export\nOil Base\nOut of Oil Base\nDivers",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "job_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Navision Status",
+   "options": "Open\nOPEN\nADDCOST\nOPENATZERO\nPROFORMA\nPARTIAL\nINVOICED\nOPS.CLOSIN\nPARTIAL_CL\nREOPENED\nSARS\nCLOSED\nCANCELLED",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_id2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "client",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Client Code",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "client_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Client Name",
+   "read_only": 1
+  },
+  {
+   "default": "Per File",
+   "fieldname": "billing_model",
+   "fieldtype": "Select",
+   "label": "Billing Model",
+   "options": "Per File\nMonthly Consolidated"
+  },
+  {
+   "fieldname": "sec_ops",
+   "fieldtype": "Section Break",
+   "label": "\u2699\ufe0f Operations"
+  },
+  {
+   "bold": 1,
+   "description": "Enter the exact date the job alert email arrived \u2014 this starts all clocks",
+   "fieldname": "date_ot_received",
+   "fieldtype": "Date",
+   "label": "\ud83d\udcc5 Date OT / Job Alert Received"
+  },
+  {
+   "description": "Required before Stage 1 can be marked complete",
+   "fieldname": "ot_received_proof",
+   "fieldtype": "Attach",
+   "label": "Proof of OT (email or document)"
+  },
+  {
+   "fieldname": "col_ops1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "transit_officer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Operations Agent / Coordinator",
+   "options": "User"
+  },
+  {
+   "fieldname": "col_ops2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Never printed or shared externally",
+   "fieldname": "internal_notes",
+   "fieldtype": "Small Text",
+   "label": "Internal Notes"
+  },
+  {
+   "fieldname": "sec_deadlines",
+   "fieldtype": "Section Break",
+   "label": "\u23f1\ufe0f Deadline Clocks"
+  },
+  {
+   "fieldname": "sla_deadline",
+   "fieldtype": "Date",
+   "label": "Client SLA Deadline",
+   "read_only": 1
+  },
+  {
+   "default": "On Track",
+   "fieldname": "sla_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "SLA Status",
+   "options": "On Track\nAmber\nBreached",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sla_days_remaining",
+   "fieldtype": "Int",
+   "label": "Days Remaining (SLA)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_dl1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.freight_type && doc.freight_type.includes('Sea')",
+   "fieldname": "demurrage_applicable",
+   "fieldtype": "Check",
+   "label": "Demurrage Applicable?"
+  },
+  {
+   "depends_on": "eval:doc.demurrage_applicable==1",
+   "description": "Vessel arrival or container discharge \u2014 confirm with Operations",
+   "fieldname": "demurrage_free_period_start",
+   "fieldtype": "Date",
+   "label": "Free Period Start (Port/Line)"
+  },
+  {
+   "depends_on": "eval:doc.demurrage_applicable==1",
+   "fieldname": "demurrage_deadline",
+   "fieldtype": "Date",
+   "label": "Demurrage Deadline",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_dl2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Clear",
+   "depends_on": "eval:doc.demurrage_applicable==1",
+   "fieldname": "demurrage_status",
+   "fieldtype": "Select",
+   "label": "Demurrage Status",
+   "options": "Clear\nAmber\nBreached",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.demurrage_applicable==1",
+   "fieldname": "demurrage_days_overdue",
+   "fieldtype": "Int",
+   "label": "Days Overdue",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.demurrage_applicable==1",
+   "fieldname": "demurrage_daily_rate",
+   "fieldtype": "Currency",
+   "label": "Daily Rate (XAF)"
+  },
+  {
+   "depends_on": "eval:doc.demurrage_applicable==1",
+   "fieldname": "demurrage_accrued",
+   "fieldtype": "Currency",
+   "label": "Demurrage Cost Accruing (XAF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_margin",
+   "fieldtype": "Section Break",
+   "label": "\ud83d\udcb0 Margin \u2014 Forecast vs Actual"
+  },
+  {
+   "fieldname": "html_margin_note",
+   "fieldtype": "HTML",
+   "options": "<div style=\"background:#fff4e0;border-left:4px solid #f59e0b;padding:8px 12px;margin-bottom:8px;font-size:12px;border-radius:4px;\"><b>\ud83d\udccc Forecast</b> is editable until you submit this file. Once submitted it is <b>locked permanently</b>. Actuals are read from Navision automatically.</div>"
+  },
+  {
+   "description": "Enter before submitting \u2014 locked on submit",
+   "fieldname": "forecast_revenue",
+   "fieldtype": "Currency",
+   "label": "Forecast Revenue (XAF)"
+  },
+  {
+   "fieldname": "col_m1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "forecast_cost",
+   "fieldtype": "Currency",
+   "label": "Forecast Cost (XAF)"
+  },
+  {
+   "fieldname": "col_m2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "forecast_margin",
+   "fieldtype": "Currency",
+   "label": "Forecast Margin (XAF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "forecast_margin_pct",
+   "fieldtype": "Percent",
+   "label": "Forecast Margin %",
+   "read_only": 1
+  },
+  {
+   "fieldname": "forecast_locked_on",
+   "fieldtype": "Datetime",
+   "label": "Locked On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "forecast_locked_by",
+   "fieldtype": "Data",
+   "label": "Locked By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_actual",
+   "fieldtype": "Section Break",
+   "label": "Actual (from Navision Job Ledger)"
+  },
+  {
+   "fieldname": "actual_revenue",
+   "fieldtype": "Currency",
+   "label": "Actual Revenue (XAF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_m3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "actual_cost",
+   "fieldtype": "Currency",
+   "label": "Actual Cost (XAF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_m4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "actual_margin",
+   "fieldtype": "Currency",
+   "label": "Actual Margin (XAF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "actual_margin_pct",
+   "fieldtype": "Percent",
+   "label": "Actual Margin %",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_variance",
+   "fieldtype": "Section Break",
+   "label": "Variance vs Forecast"
+  },
+  {
+   "description": "Negative = actual below forecast",
+   "fieldname": "margin_variance_pct",
+   "fieldtype": "Percent",
+   "label": "Variance %",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_m5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "OK",
+   "fieldname": "margin_gate_status",
+   "fieldtype": "Select",
+   "label": "Margin Gate",
+   "options": "OK\nFlagged \u2014 reason required\nBlocked \u2014 Director review",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_m6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:['Flagged \u2014 reason required','Blocked \u2014 Director review'].includes(doc.margin_gate_status)",
+   "fieldname": "margin_variance_reason",
+   "fieldtype": "Select",
+   "label": "Reason for Margin Gap",
+   "options": "\nDemurrage\nScope Change\nUnderquoted\nFX Movement\nClient Dispute\nOperational Error\nForce Majeure\nOther"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "sec_nas",
+   "fieldtype": "Section Break",
+   "label": "\ud83d\udcc1 NAS Storage"
+  },
+  {
+   "fieldname": "nas_folder_path",
+   "fieldtype": "Data",
+   "label": "NAS Folder Path",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_stages",
+   "fieldtype": "Section Break",
+   "label": "\ud83d\udccb Stage Log"
+  },
+  {
+   "fieldname": "stage_log",
+   "fieldtype": "Table",
+   "label": "Stage Log",
+   "options": "AMT Job Stage"
+  },
+  {
+   "default": "0",
+   "fieldname": "forecast_locked",
+   "fieldtype": "Check",
+   "label": "Forecast Locked",
+   "read_only": 1
+  },
+  {
+   "description": "Date vessel/plane actually arrived \u2014 entered by Operations Head. SLA Phase 2 starts from this date.",
+   "fieldname": "arrival_date",
+   "fieldtype": "Date",
+   "label": "Actual Arrival Date"
+  },
+  {
+   "description": "Auto-filled when Operations Head enters arrival date",
+   "fieldname": "arrival_confirmed_by",
+   "fieldtype": "Data",
+   "label": "Arrival Confirmed By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "arrival_confirmed_at",
+   "fieldtype": "Datetime",
+   "label": "Arrival Confirmed At",
+   "read_only": 1
+  },
+  {
+   "default": "2",
+   "description": "Days allowed for pre-arrival phase (Set automatically from freight type \u2014 not editable per file.)",
+   "fieldname": "phase1_sla_days",
+   "fieldtype": "Int",
+   "label": "Phase 1 SLA (Days)",
+   "read_only": 1
+  },
+  {
+   "default": "3",
+   "description": "Days allowed after arrival for delivery (3=Air, 7=Sea) (Set automatically from freight type \u2014 not editable per file.)",
+   "fieldname": "phase2_sla_days",
+   "fieldtype": "Int",
+   "label": "Phase 2 SLA (Days)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phase1_deadline",
+   "fieldtype": "Date",
+   "label": "Phase 1 Deadline",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phase2_deadline",
+   "fieldtype": "Date",
+   "label": "Phase 2 Deadline",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "sec_transport",
+   "fieldtype": "Section Break",
+   "label": "\u2708\ufe0f Transport & Reference Numbers"
+  },
+  {
+   "description": "Vessel name or flight number from Navision",
+   "fieldname": "vessel_flight",
+   "fieldtype": "Data",
+   "label": "Vessel / Flight"
+  },
+  {
+   "fieldname": "col_transport1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Master Airway Bill or Bill of Lading number",
+   "fieldname": "mawb_bl",
+   "fieldtype": "Data",
+   "label": "MAWB / BL Number"
+  },
+  {
+   "fieldname": "col_transport2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "House Airway Bill number",
+   "fieldname": "hawb",
+   "fieldtype": "Data",
+   "label": "HAWB Number"
+  },
+  {
+   "description": "Expected arrival date \u2014 agent must fill this when file is created",
+   "fieldname": "eta",
+   "fieldtype": "Date",
+   "label": "ETA (Estimated Arrival)"
+  },
+  {
+   "fieldname": "col_transport3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Auto-read from Navision Job Creator field",
+   "fieldname": "job_creator_nav",
+   "fieldtype": "Data",
+   "label": "Created in Navision By",
+   "read_only": 1
+  },
+  {
+   "description": "Date job was closed in Navision",
+   "fieldname": "closing_date_nav",
+   "fieldtype": "Date",
+   "label": "Closing Date (Navision)",
+   "read_only": 1
+  },
+  {
+   "description": "Auto-read from Navision when available",
+   "fieldname": "customs_declaration_no",
+   "fieldtype": "Data",
+   "label": "Customs Declaration No."
+  },
+  {
+   "description": "Upload arrival notice, manifeste, LTA or BL \u2014 mandatory before arrival date is accepted",
+   "fieldname": "arrival_proof",
+   "fieldtype": "Attach",
+   "label": "Arrival / Departure Proof Document"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-30 20:09:24.261933",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Job File",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Air Freight Agent",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Customs Agent",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of Air Freight",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Sea Freight Agent",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of Sea Freight",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director of Operations",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Finance Officer",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director of Finance",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director General",
+   "share": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Treasurer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Chief Accountant",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Cashier",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Reporting Officer",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoicing Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoicing Agent",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoice Dispatcher",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Recovery Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Recovery Agent",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Shipping Run Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Shipping Run Agent",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Customs Head",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Customs Agent",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of Shipping",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of Logistics",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of PSS",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of Oil Base",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Oil Base Agent",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "job_number",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "job_number",
+ "track_changes": 1,
+ "track_seen": 1
+}

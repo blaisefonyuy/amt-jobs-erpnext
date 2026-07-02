@@ -1,0 +1,78 @@
+{
+ "charts": [
+  {
+   "chart_name": "Files by Navision Status",
+   "label": "Files by Navision Status"
+  }
+ ],
+ "content": "[{\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shipping \\u2014 Total Files (2026)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shipping \\u2014 Active Files\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shipping \\u2014 SLA Breached\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shipping \\u2014 No Agent Assigned\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shipping \\u2014 Invoiced Files\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shipping \\u2014 2026 Margin (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shipping \\u2014 Actual Revenue (XAF)\", \"col\": 3}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shipping \\u2014 2026 Cost (XAF)\", \"col\": 3}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"Files by Navision Status\", \"col\": 6}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"AMT Job File\", \"col\": 3}}]",
+ "creation": "2026-06-26 17:59:24.099233",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "AMT Shipping",
+ "links": [],
+ "modified": "2026-06-26 17:59:24.099233",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Shipping",
+ "number_cards": [
+  {
+   "label": "Shipping \u2014 Total Files (2026)",
+   "number_card_name": "Shipping \u2014 Total Files (2026)"
+  },
+  {
+   "label": "Shipping \u2014 Active Files",
+   "number_card_name": "Shipping \u2014 Active Files"
+  },
+  {
+   "label": "Shipping \u2014 SLA Breached",
+   "number_card_name": "Shipping \u2014 SLA Breached"
+  },
+  {
+   "label": "Shipping \u2014 No Agent Assigned",
+   "number_card_name": "Shipping \u2014 No Agent Assigned"
+  },
+  {
+   "label": "Shipping \u2014 Invoiced Files",
+   "number_card_name": "Shipping \u2014 Invoiced Files"
+  },
+  {
+   "label": "Shipping \u2014 2026 Margin (XAF)",
+   "number_card_name": "Shipping \u2014 2026 Margin (XAF)"
+  },
+  {
+   "label": "Shipping \u2014 Actual Revenue (XAF)",
+   "number_card_name": "Shipping \u2014 Actual Revenue (XAF)"
+  },
+  {
+   "label": "Shipping \u2014 2026 Cost (XAF)",
+   "number_card_name": "Shipping \u2014 2026 Cost (XAF)"
+  }
+ ],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "AMT Head of Shipping"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 0.0,
+ "shortcuts": [
+  {
+   "doc_view": "",
+   "label": "AMT Job File",
+   "link_to": "AMT Job File",
+   "type": "DocType"
+  }
+ ],
+ "title": "AMT Shipping"
+}

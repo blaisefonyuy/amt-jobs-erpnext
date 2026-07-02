@@ -1,0 +1,201 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-06-24 07:40:41.179469",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "shipping_line",
+  "container_type",
+  "col1",
+  "free_days",
+  "col2",
+  "currency",
+  "sec_rates",
+  "rate_day_1_3",
+  "col3",
+  "rate_day_4_7",
+  "col4",
+  "rate_day_8_plus",
+  "sec_notes",
+  "effective_date",
+  "col5",
+  "notes"
+ ],
+ "fields": [
+  {
+   "bold": 1,
+   "fieldname": "shipping_line",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Shipping Line",
+   "reqd": 1
+  },
+  {
+   "fieldname": "container_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Container Type",
+   "options": "\n20ft Standard\n40ft Standard\n40ft High Cube\n40ft Reefer\n20ft Reefer\nBulk\nBreak Bulk",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "5",
+   "description": "Number of free days the port/line grants before charges start",
+   "fieldname": "free_days",
+   "fieldtype": "Int",
+   "label": "Free Days",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "XAF",
+   "fieldname": "currency",
+   "fieldtype": "Select",
+   "label": "Currency",
+   "options": "XAF\nUSD\nEUR",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sec_rates",
+   "fieldtype": "Section Break",
+   "label": "Daily Rates (per day)"
+  },
+  {
+   "description": "Daily charge for days 1 to 3 after free period ends",
+   "fieldname": "rate_day_1_3",
+   "fieldtype": "Currency",
+   "label": "Rate Days 1-3 (per day)"
+  },
+  {
+   "fieldname": "col3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Daily charge for days 4 to 7",
+   "fieldname": "rate_day_4_7",
+   "fieldtype": "Currency",
+   "label": "Rate Days 4-7 (per day)"
+  },
+  {
+   "fieldname": "col4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Daily charge from day 8 onwards",
+   "fieldname": "rate_day_8_plus",
+   "fieldtype": "Currency",
+   "label": "Rate Day 8+ (per day)"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "sec_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "description": "Date from which these rates apply",
+   "fieldname": "effective_date",
+   "fieldtype": "Date",
+   "label": "Effective From"
+  },
+  {
+   "fieldname": "col5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Any special conditions or remarks from the shipping line",
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-24 07:40:41.179469",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "Demurrage Rate",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Finance Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director of Finance",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Treasurer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director of Operations",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of Sea Freight",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "shipping_line",
+ "track_changes": 1
+}

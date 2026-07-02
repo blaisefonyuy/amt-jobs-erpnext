@@ -1,0 +1,83 @@
+{
+ "charts": [
+  {
+   "chart_name": "SF Files by Status",
+   "label": "SF Files by Status"
+  },
+  {
+   "chart_name": "SF Files by Type",
+   "label": "SF Files by Type"
+  }
+ ],
+ "content": "[{\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sea Freight \\u2014 Total Files\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sea Freight \\u2014 Active Files\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sea Freight \\u2014 SLA Breached\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sea Freight \\u2014 No Agent Assigned\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sea Freight \\u2014 Demurrage Running\", \"col\": 2}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sea Freight \\u2014 Actual Revenue (XAF)\", \"col\": 4}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sea Freight \\u2014 2026 Cost (XAF)\", \"col\": 4}}, {\"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sea Freight \\u2014 2026 Margin (XAF)\", \"col\": 4}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"SF Files by Status\", \"col\": 6}}, {\"type\": \"chart\", \"data\": {\"chart_name\": \"SF Files by Type\", \"col\": 6}}]",
+ "creation": "2026-06-24 20:26:50.383881",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "briefcase",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "AMT Sea Freight",
+ "links": [],
+ "modified": "2026-06-26 13:18:30.158295",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Sea Freight",
+ "number_cards": [
+  {
+   "label": "Sea Freight \u2014 Total Files",
+   "number_card_name": "Sea Freight \u2014 Total Files"
+  },
+  {
+   "label": "Sea Freight \u2014 Active Files",
+   "number_card_name": "Sea Freight \u2014 Active Files"
+  },
+  {
+   "label": "Sea Freight \u2014 SLA Breached",
+   "number_card_name": "Sea Freight \u2014 SLA Breached"
+  },
+  {
+   "label": "Sea Freight \u2014 No Agent Assigned",
+   "number_card_name": "Sea Freight \u2014 No Agent Assigned"
+  },
+  {
+   "label": "Sea Freight \u2014 Demurrage Running",
+   "number_card_name": "Sea Freight \u2014 Demurrage Running"
+  },
+  {
+   "label": "Sea Freight \u2014 Actual Revenue (XAF)",
+   "number_card_name": "Sea Freight \u2014 Actual Revenue (XAF)"
+  },
+  {
+   "label": "Sea Freight \u2014 2026 Cost (XAF)",
+   "number_card_name": "Sea Freight \u2014 2026 Cost (XAF)"
+  },
+  {
+   "label": "Sea Freight \u2014 2026 Margin (XAF)",
+   "number_card_name": "Sea Freight \u2014 2026 Margin (XAF)"
+  }
+ ],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "AMT Head of Sea Freight"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 0.0,
+ "shortcuts": [
+  {
+   "doc_view": "",
+   "label": "Sea Freight Files",
+   "link_to": "AMT Job File",
+   "type": "DocType"
+  }
+ ],
+ "title": "AMT Sea Freight"
+}
