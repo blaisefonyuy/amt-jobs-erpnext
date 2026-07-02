@@ -63,3 +63,22 @@ def record_arrival(job_file, arrival_date, notes=None):
         "phase2_deadline": doc.phase2_deadline,
         "message":         f"Arrival recorded. Phase 2 deadline: {doc.phase2_deadline}"
     }
+
+
+@frappe.whitelist()
+def get_customs_agents(doctype, txt, searchfield, start, page_len, filters):
+    """Return users with AMT Customs Agent role for dropdown"""
+    return frappe.db.sql("""
+        SELECT u.name, u.full_name
+        FROM `tabUser` u
+        INNER JOIN `tabHas Role` r ON r.parent = u.name
+        WHERE r.role = 'AMT Customs Agent'
+        AND u.enabled = 1
+        AND (u.name LIKE %(txt)s OR u.full_name LIKE %(txt)s)
+        ORDER BY u.full_name
+        LIMIT %(page_len)s OFFSET %(start)s
+    """, {
+        'txt': f'%{txt}%',
+        'page_len': page_len,
+        'start': start
+    })

@@ -104,7 +104,8 @@
   "current_stage_role",
   "current_phase",
   "stage_history",
-  "stage_history_html"
+  "stage_history_html",
+  "customs_agent"
  ],
  "fields": [
   {
@@ -718,12 +719,19 @@
    "fieldname": "stage_history_html",
    "fieldtype": "HTML",
    "label": "Stage History Display"
+  },
+  {
+   "description": "Select a Customs Agent \u2014 only Customs HOD can assign",
+   "fieldname": "customs_agent",
+   "fieldtype": "Link",
+   "label": "Customs Agent Assigned",
+   "options": "User"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-02 19:44:27.677926",
+ "modified": "2026-07-02 20:47:52.922320",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Job File",

@@ -9,6 +9,80 @@ class AMTJobFile(Document):
         self._calculate_margins()
         self._sync_current_stage()
 
+    def on_update(self):
+        """Notify customs agent when assigned by Customs HOD"""
+        if not self.customs_agent:
+            return
+
+        # Check if customs_agent was just set
+        old_doc = self.get_doc_before_save()
+        if old_doc and old_doc.customs_agent == self.customs_agent:
+            return  # No change
+
+        # Customs agent just assigned — notify them
+        if self.current_stage_seq == 5:
+            try:
+                frappe.sendmail(
+                    recipients=[self.customs_agent],
+                    subject=f"🔔 Customs Declaration Assigned — {self.name}",
+                    message=f"""
+                    <div style="font-family:Arial,sans-serif;max-width:640px;">
+                        <div style="background:#17475E;padding:14px 20px;
+                                    border-radius:6px 6px 0 0;">
+                            <h2 style="color:#fff;margin:0;">
+                                📋 Customs Declaration — Action Required</h2>
+                            <p style="color:#fff;opacity:.9;margin:4px 0 0;">
+                                {self.name} — {self.client_name or ''}</p>
+                        </div>
+                        <div style="border:1px solid #dde3ee;padding:20px;
+                                    border-radius:0 0 6px 6px;">
+                            <p>The Customs HOD has assigned you to handle the
+                            customs declaration for this file.</p>
+                            <table style="width:100%;font-size:13px;
+                                          border-collapse:collapse;">
+                                <tr style="background:#f5f6fa;">
+                                    <td style="padding:8px 12px;font-weight:600;">
+                                        Job File:</td>
+                                    <td style="padding:8px 12px;">{self.name}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 12px;font-weight:600;">
+                                        Client:</td>
+                                    <td style="padding:8px 12px;">
+                                        {self.client_name or ''}</td>
+                                </tr>
+                                <tr style="background:#f5f6fa;">
+                                    <td style="padding:8px 12px;font-weight:600;">
+                                        Freight Type:</td>
+                                    <td style="padding:8px 12px;">
+                                        {self.freight_type or ''}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 12px;font-weight:600;">
+                                        Your Action:</td>
+                                    <td style="padding:8px 12px;font-weight:600;
+                                                color:#17475E;">
+                                        Stage 5: Complete Customs Declaration
+                                        and upload all documents</td>
+                                </tr>
+                            </table>
+                            <br/>
+                            <a href="https://portal.amtcm-sa.com/app/amt-job-file/{self.name}"
+                               style="background:#17475E;color:#fff;padding:12px 24px;
+                                      text-decoration:none;border-radius:4px;
+                                      font-weight:bold;display:inline-block;">
+                                Open File → Complete Stage 5
+                            </a>
+                        </div>
+                    </div>
+                    """,
+                    now=False,
+                )
+                frappe.logger().info(
+                    f"[Customs Assignment] {self.name} → {self.customs_agent}")
+            except Exception as e:
+                frappe.log_error(str(e), "Customs Assignment Notification")
+
     def _calculate_margins(self):
         """Auto-calculate forecast and actual margins"""
         if self.forecast_revenue and self.forecast_cost:

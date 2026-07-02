@@ -1,149 +1,153 @@
 import frappe
 
 def get_permission_query_conditions(user):
+    """
+    Filter AMT Job File list based on user role:
+    - System Manager / Directors: see everything
+    - Department Heads: see their department files + customs-assigned files
+    - Agents: see their department files + customs-assigned files
+    - Customs Head: see CUI/CUE + Transit files where their team is assigned
+    - Customs Agents: see CUI/CUE + Transit files assigned to them
+    """
     if not user:
         user = frappe.session.user
 
-    user_roles = frappe.get_roles(user)
-
-    # ── Full access ──────────────────────────────────────────────────────────
-    full_access = [
-        "System Manager", "Administrator",
-        "AMT Director of Operations",
-        "AMT Director of Finance",
-        "AMT Director General",
-    ]
-    for r in full_access:
-        if r in user_roles:
-            return ""
-
-    # ── Transit Officer — all Transit files ──────────────────────────────────
-    if "AMT Transit Officer" in user_roles:
-        return "`tabAMT Job File`.`department` = 'Transit'"
-
-    # ── Air Freight Head — Air Freight only ──────────────────────────────────
-    if "AMT Head of Air Freight" in user_roles:
-        return """`tabAMT Job File`.`freight_type` IN (
-            'Air Freight Import','Air Freight Export'
-        )"""
-
-    # ── Air Freight Agents — only assigned files ──────────────────────────────
-    if "AMT Air Freight Agent" in user_roles:
-        return ("`tabAMT Job File`.`freight_type` IN "
-                "('Air Freight Import','Air Freight Export') "
-                "AND `tabAMT Job File`.`transit_officer` = '{}'").format(user)
-
-    # ── Customs Head — Customs only ───────────────────────────────────────────
-    if "AMT Customs Head" in user_roles:
-        return """`tabAMT Job File`.`freight_type` IN (
-            'Customs Import','Customs Export'
-        )"""
-
-    # ── Customs Agents — only assigned files ─────────────────────────────────
-    if "AMT Customs Agent" in user_roles:
-        return ("`tabAMT Job File`.`freight_type` IN "
-                "('Customs Import','Customs Export') "
-                "AND `tabAMT Job File`.`transit_officer` = '{}'").format(user)
-
-    # ── Sea Freight Head — Sea only ───────────────────────────────────────────
-    if "AMT Head of Sea Freight" in user_roles:
-        return """`tabAMT Job File`.`freight_type` IN (
-            'Sea Freight Import','Sea Freight Export','Sea Freight Groupage'
-        )"""
-
-    # ── Sea Freight Agents — only assigned files ──────────────────────────────
-    if "AMT Sea Freight Agent" in user_roles:
-        return ("`tabAMT Job File`.`freight_type` IN "
-                "('Sea Freight Import','Sea Freight Export','Sea Freight Groupage') "
-                "AND `tabAMT Job File`.`transit_officer` = '{}'").format(user)
-
-    # ── Shipping ──────────────────────────────────────────────────────────────
-    if "AMT Head of Shipping" in user_roles:
-        return "`tabAMT Job File`.`department` = 'Shipping'"
-
-    if "AMT Shipping Agent" in user_roles:
-        return ("`tabAMT Job File`.`department` = 'Shipping' "
-                "AND `tabAMT Job File`.`transit_officer` = '{}'").format(user)
-
-    # ── Logistics ─────────────────────────────────────────────────────────────
-    if "AMT Head of Logistics" in user_roles:
-        return "`tabAMT Job File`.`department` = 'Logistics'"
-
-    if "AMT Logistics Agent" in user_roles:
-        return ("`tabAMT Job File`.`department` = 'Logistics' "
-                "AND `tabAMT Job File`.`transit_officer` = '{}'").format(user)
-
-    # ── PSS ───────────────────────────────────────────────────────────────────
-    if "AMT Head of PSS" in user_roles:
-        return "`tabAMT Job File`.`department` = 'PSS'"
-
-    if "AMT PSS Agent" in user_roles:
-        return ("`tabAMT Job File`.`department` = 'PSS' "
-                "AND `tabAMT Job File`.`transit_officer` = '{}'").format(user)
-
-    # ── LIMA Oil Base ─────────────────────────────────────────────────────────
-    if "AMT Head of Oil Base" in user_roles:
-        return "`tabAMT Job File`.`department` = 'LIMA Oil Base'"
-
-    if "AMT Oil Base Agent" in user_roles:
-        return ("`tabAMT Job File`.`department` = 'LIMA Oil Base' "
-                "AND `tabAMT Job File`.`transit_officer` = '{}'").format(user)
-
-    # ── Finance — read all ────────────────────────────────────────────────────
-    if "AMT Finance Officer" in user_roles:
+    if user == "Administrator":
         return ""
 
-    if "AMT Director of Finance" in user_roles:
-        return ""
+    roles = frappe.get_roles(user)
 
-    # ── Accounting ───────────────────────────────────────────────────────────
-    if any(r in user_roles for r in [
-        "AMT Treasurer", "AMT Chief Accountant", "AMT Reporting Officer"
+    # System Manager and Directors see everything
+    if any(r in roles for r in [
+        "System Manager", "AMT Director of Operations",
+        "AMT Director General", "AMT Director of Finance"
     ]):
         return ""
 
-    # Cashier — sees all files but margin section hidden via field permissions
-    if "AMT Cashier" in user_roles:
-        return ""
+    conditions = []
 
-    # ── Invoicing ─────────────────────────────────────────────────────────────
-    if "AMT Invoicing Officer" in user_roles:
-        return ""
+    # Air Freight team
+    if "AMT Head of Air Freight" in roles or "AMT Air Freight Agent" in roles:
+        conditions.append(
+            "`tabAMT Job File`.freight_type IN "
+            "('Air Freight Import','Air Freight Export')"
+        )
 
-    if "AMT Invoicing Agent" in user_roles:
-        return ("`tabAMT Job File`.`transit_officer` = '{}' "
-                "OR `tabAMT Job File`.`transit_officer` IS NULL").format(user)
+    # Sea Freight team
+    if "AMT Head of Sea Freight" in roles or "AMT Sea Freight Agent" in roles:
+        conditions.append(
+            "`tabAMT Job File`.freight_type IN "
+            "('Sea Freight Import','Sea Freight Export','Sea Freight Groupage')"
+        )
 
-    if "AMT Invoice Dispatcher" in user_roles:
-        return ""
+    # Customs Head — sees CUI/CUE + Transit files at Stage 5 (needs customs work)
+    if "AMT Customs Head" in roles:
+        conditions.append(
+            "`tabAMT Job File`.freight_type IN ('Customs Import','Customs Export')"
+        )
+        # Also see Transit files at Stage 5 (customs declaration pending)
+        # OR where his team is already assigned
+        conditions.append(
+            "(`tabAMT Job File`.current_stage_seq = 5 "
+            "OR (`tabAMT Job File`.customs_agent IS NOT NULL "
+            "AND `tabAMT Job File`.customs_agent != ''))"
+        )
 
-    # ── Recovery ──────────────────────────────────────────────────────────────
-    if "AMT Recovery Officer" in user_roles:
-        return ""
+    # Customs Agents — see CUI/CUE + Transit files assigned to them
+    if "AMT Customs Agent" in roles:
+        conditions.append(
+            "`tabAMT Job File`.freight_type IN ('Customs Import','Customs Export')"
+        )
+        conditions.append(
+            f"`tabAMT Job File`.customs_agent = '{user}'"
+        )
 
-    if "AMT Recovery Agent" in user_roles:
-        return ""
+    # Shipping team
+    if "AMT Head of Shipping" in roles or "AMT Shipping Agent" in roles:
+        conditions.append(
+            "`tabAMT Job File`.freight_type IN "
+            "('Oil Base','Out of Oil Base','Divers')"
+        )
 
-    # ── Shipping Run Control ──────────────────────────────────────────────────
-    if "AMT Shipping Run Officer" in user_roles:
-        return ""
+    # Logistics team
+    if "AMT Head of Logistics" in roles or "AMT Logistics Agent" in roles:
+        conditions.append(
+            "`tabAMT Job File`.department = 'Logistics'"
+        )
 
-    if "AMT Shipping Run Agent" in user_roles:
-        return ""
+    # PSS team
+    if "AMT Head of PSS" in roles or "AMT PSS Agent" in roles:
+        conditions.append(
+            "`tabAMT Job File`.department = 'PSS'"
+        )
 
-    # Default — show nothing
-    return "1=0"
+    # Recovery / Invoicing / Finance Officers see all files in Phase 3/4
+    if any(r in roles for r in [
+        "AMT Recovery Officer", "AMT Invoicing Officer",
+        "AMT Invoice Dispatcher", "AMT Finance Officer",
+        "AMT Shipping Run Officer"
+    ]):
+        conditions.append(
+            "`tabAMT Job File`.current_phase IN "
+            "('Phase 3 — Invoicing','Phase 4 — Recovery')"
+        )
 
-def get_finance_permission_query_conditions(user):
-    """Separate check for Finance roles — all see all departments."""
-    user_roles = frappe.get_roles(user)
-    finance_full_access = [
-        "AMT Treasurer", "AMT Chief Accountant",
-        "AMT Reporting Officer", "AMT Director of Finance",
-        "AMT Invoicing Officer", "AMT Recovery Officer",
-        "AMT Shipping Run Officer",
-    ]
-    for r in finance_full_access:
-        if r in user_roles:
-            return ""
-    return None
+    if not conditions:
+        # No matching role — see nothing
+        return "1=0"
+
+    return "(" + " OR ".join(conditions) + ")"
+
+
+def has_permission(doc, user=None, permission_type=None):
+    """Document-level permission check"""
+    if not user:
+        user = frappe.session.user
+
+    if user == "Administrator":
+        return True
+
+    roles = frappe.get_roles(user)
+
+    # Directors see everything
+    if any(r in roles for r in [
+        "System Manager", "AMT Director of Operations",
+        "AMT Director General", "AMT Director of Finance"
+    ]):
+        return True
+
+    ft = doc.freight_type or ""
+
+    # Air Freight
+    if ft in ("Air Freight Import", "Air Freight Export"):
+        if any(r in roles for r in ["AMT Head of Air Freight", "AMT Air Freight Agent"]):
+            return True
+
+    # Sea Freight
+    if ft in ("Sea Freight Import", "Sea Freight Export", "Sea Freight Groupage"):
+        if any(r in roles for r in ["AMT Head of Sea Freight", "AMT Sea Freight Agent"]):
+            return True
+
+    # Customs standalone
+    if ft in ("Customs Import", "Customs Export"):
+        if any(r in roles for r in ["AMT Customs Head", "AMT Customs Agent"]):
+            return True
+
+    # Customs team on Transit files
+    if ft in ("Air Freight Import", "Air Freight Export",
+              "Sea Freight Import", "Sea Freight Export"):
+        if "AMT Customs Head" in roles and doc.customs_agent:
+            return True
+        if "AMT Customs Agent" in roles and doc.customs_agent == user:
+            return True
+
+    # Recovery/Invoicing on Phase 3/4 files
+    if doc.current_phase in ("Phase 3 — Invoicing", "Phase 4 — Recovery"):
+        if any(r in roles for r in [
+            "AMT Recovery Officer", "AMT Invoicing Officer",
+            "AMT Invoice Dispatcher", "AMT Finance Officer",
+            "AMT Shipping Run Officer"
+        ]):
+            return True
+
+    return False

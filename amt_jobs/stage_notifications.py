@@ -14,9 +14,9 @@ STAGE_NOTIFICATIONS = {
     3:  (["AMT Head of Air Freight", "AMT Head of Sea Freight"],
          "Stage 3 complete — Cost & Profit Analysis done. Please assign customs declaration (Stage 4).",
          False),
-    # Stage 4 — Customs assigned → notify Customs HOD
+    # Stage 4 — Customs assigned → notify Customs HOD with file link
     4:  (["AMT Customs Head"],
-         "Stage 4 complete — Customs declaration assigned to your team. Please assign a Customs Agent to handle the declaration and complete Stage 5.",
+         "Stage 4 complete — A Transit file requires customs declaration. Please open the file, assign a Customs Agent in the 'Customs Agent Assigned' field, and ensure they complete Stage 5 (Customs Declaration Complete).",
          True),
     # Stage 5 — Customs complete → notify Transit Agent to request finance
     5:  (["AMT Air Freight Agent", "AMT Sea Freight Agent", "AMT Customs Agent"],
@@ -238,5 +238,57 @@ def on_stage_complete(doc, completed_seq, completed_by):
     """Main entry point — called from server script when stage is saved complete"""
     try:
         send_stage_notification(doc, completed_seq, completed_by)
+
+        # Stage 4 special — also notify assigned customs agent directly
+        if completed_seq == 4 and doc.customs_agent:
+            try:
+                frappe.sendmail(
+                    recipients=[doc.customs_agent],
+                    subject=f"🔔 Customs Declaration Required — {doc.name}",
+                    message=f"""
+                    <div style="font-family:Arial,sans-serif;max-width:640px;">
+                        <div style="background:#17475E;padding:14px 20px;border-radius:6px 6px 0 0;">
+                            <h2 style="color:#fff;margin:0;">📋 Customs Declaration Assigned</h2>
+                            <p style="color:#fff;opacity:.9;margin:4px 0 0;">
+                                {doc.name} — {doc.client_name or ''}</p>
+                        </div>
+                        <div style="border:1px solid #dde3ee;padding:20px;border-radius:0 0 6px 6px;">
+                            <p>You have been assigned to handle the customs declaration
+                            for this file.</p>
+                            <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                                <tr style="background:#f5f6fa;">
+                                    <td style="padding:8px 12px;font-weight:600;">Job File:</td>
+                                    <td style="padding:8px 12px;">{doc.name}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 12px;font-weight:600;">Client:</td>
+                                    <td style="padding:8px 12px;">{doc.client_name or ''}</td>
+                                </tr>
+                                <tr style="background:#f5f6fa;">
+                                    <td style="padding:8px 12px;font-weight:600;">Freight Type:</td>
+                                    <td style="padding:8px 12px;">{doc.freight_type or ''}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 12px;font-weight:600;">Your Action:</td>
+                                    <td style="padding:8px 12px;font-weight:600;color:#17475E;">
+                                        Stage 5: Customs Declaration Complete</td>
+                                </tr>
+                            </table>
+                            <br/>
+                            <a href="https://portal.amtcm-sa.com/app/amt-job-file/{doc.name}"
+                               style="background:#17475E;color:#fff;padding:12px 24px;
+                                      text-decoration:none;border-radius:4px;font-weight:bold;
+                                      display:inline-block;">
+                                Open File & Complete Stage 5 →
+                            </a>
+                        </div>
+                    </div>
+                    """,
+                )
+                frappe.logger().info(
+                    f"[Stage 4] Notified customs agent {doc.customs_agent} for {doc.name}")
+            except Exception as e:
+                frappe.log_error(str(e), "Customs Agent Notification")
+
     except Exception as e:
         frappe.log_error(str(e), "Stage Notification")
