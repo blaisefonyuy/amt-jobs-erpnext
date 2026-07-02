@@ -122,21 +122,21 @@ class AMTJobFile(Document):
                 )
 
         # Stage 5 — finance amount required
-        if seq == 5 and not flt(amount):
+        if seq == 6 and not flt(amount):
             frappe.throw(
                 "Stage 5 requires the Finance Amount Requested. "
                 "Please enter the amount before completing."
             )
 
         # Stage 7 — finance release amount required
-        if seq == 7 and not flt(self.finance_amount_released):
+        if seq == 8 and not flt(self.finance_amount_released):
             frappe.throw(
                 "Stage 7 requires the Amount Released by Finance. "
                 "Please enter the amount before completing."
             )
 
         # Stage 8 — confirmation amount required
-        if seq == 8 and not flt(self.finance_amount_confirmed):
+        if seq == 9 and not flt(self.finance_amount_confirmed):
             frappe.throw(
                 "Stage 8 requires the Amount Confirmed by Agent. "
                 "Please enter the amount before completing."

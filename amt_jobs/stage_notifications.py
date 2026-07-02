@@ -6,80 +6,83 @@ from frappe.utils import now_datetime
 # Special cases: some stages notify multiple people
 
 STAGE_NOTIFICATIONS = {
-    # seq: (notify_roles, message_template, urgent)
     # Stage 1 — Agent uploads OT → notify HOD
     1:  (["AMT Head of Air Freight", "AMT Head of Sea Freight", "AMT Customs Head"],
-         "Stage 1 complete — OT confirmed by agent. Please review and proceed.",
+         "Stage 1 complete — OT confirmed by agent. Please review and assign.",
          False),
-    # Stage 2 — Auto-verified, no notification needed
-    # Stage 3 — Cost & Profit Analysis done → notify HOD to assign customs
+    # Stage 3 — Cost Analysis done → notify HOD to assign customs
     3:  (["AMT Head of Air Freight", "AMT Head of Sea Freight"],
-         "Stage 3 complete — Cost & Profit Analysis done. Please assign customs declaration to Customs HOD.",
+         "Stage 3 complete — Cost & Profit Analysis done. Please assign customs declaration (Stage 4).",
          False),
-    # Stage 4 — Customs assigned → notify Customs HOD + agent can request finance
-    4:  (["AMT Customs Head", "AMT Air Freight Agent", "AMT Sea Freight Agent"],
-         "Stage 4 complete — Customs declaration assigned. Agent: you may now submit pre-finance request (Stage 5).",
+    # Stage 4 — Customs assigned → notify Customs HOD
+    4:  (["AMT Customs Head"],
+         "Stage 4 complete — Customs declaration assigned to your team. Please assign a Customs Agent to handle the declaration and complete Stage 5.",
+         True),
+    # Stage 5 — Customs complete → notify Transit Agent to request finance
+    5:  (["AMT Air Freight Agent", "AMT Sea Freight Agent", "AMT Customs Agent"],
+         "Stage 5 complete — Customs declaration done. Transit Agent: please submit pre-finance request (Stage 6).",
          False),
-    # Stage 5 — Finance requested → notify HOD to validate
-    5:  (["AMT Head of Air Freight", "AMT Head of Sea Freight"],
-         "Stage 5 complete — Pre-finance requested by agent. Please validate and approve (Stage 6).",
+    # Stage 6 — Finance requested → notify HOD to validate
+    6:  (["AMT Head of Air Freight", "AMT Head of Sea Freight"],
+         "Stage 6 complete — Pre-finance requested by agent. Please validate and approve (Stage 7).",
          True),
-    # Stage 6 — HOD validated → notify Finance to release
-    6:  (["AMT Finance Officer"],
-         "Stage 6 complete — Finance request validated by HOD. Please release funds immediately (Stage 7).",
+    # Stage 7 — HOD validated → notify Finance
+    7:  (["AMT Finance Officer"],
+         "Stage 7 complete — Finance request validated by HOD. Please release funds immediately (Stage 8).",
          True),
-    # Stage 7 — Finance released → notify agent to confirm receipt
-    7:  (["AMT Air Freight Agent", "AMT Sea Freight Agent"],
-         "Stage 7 complete — Finance released. Please confirm receipt of funds (Stage 8).",
+    # Stage 8 — Finance released → notify agent
+    8:  (["AMT Air Freight Agent", "AMT Sea Freight Agent"],
+         "Stage 8 complete — Finance released. Please confirm receipt of funds (Stage 9).",
          True),
-    # Stage 8 — Agent confirmed funds → notify HOD file is ready
-    8:  (["AMT Head of Air Freight", "AMT Head of Sea Freight"],
-         "Stage 8 complete — Agent confirmed funds received. File is ready for cargo arrival. Record arrival date when cargo arrives.",
+    # Stage 9 — Funds confirmed → notify HOD
+    9:  (["AMT Head of Air Freight", "AMT Head of Sea Freight"],
+         "Stage 9 complete — Agent confirmed funds received. File ready for cargo arrival.",
          False),
-    # Stage 9 — Cargo arrived & delivered → notify agent to prepare backups URGENTLY
-    9:  (["AMT Air Freight Agent", "AMT Sea Freight Agent"],
-         "Stage 9 complete — Cargo arrived and delivered. PREPARE BACKUP FILES FOR INVOICING IMMEDIATELY. You have 2 days maximum.",
+    # Stage 10 — Cargo arrived → notify agent URGENTLY
+    10: (["AMT Air Freight Agent", "AMT Sea Freight Agent"],
+         "Stage 10 complete — Cargo arrived and delivered. PREPARE BACKUP FILES FOR INVOICING IMMEDIATELY. You have 2 days maximum.",
          True),
-    # Stage 10 — Backups sent → notify invoicing
-    10: (["AMT Invoicing Officer"],
-         "Stage 10 complete — Backup files received. Please prepare proforma invoice (Stage 11).",
-         True),
-    # Stage 11 — Proforma signed → notify invoicing for final
+    # Stage 11 — Backups sent → notify invoicing
     11: (["AMT Invoicing Officer"],
-         "Stage 11 complete — Proforma signed. Please prepare and sign final invoice (Stage 12).",
+         "Stage 11 complete — Backup files received. Please prepare proforma invoice (Stage 12).",
          True),
-    # Stage 12 — Final signed → notify dispatcher
-    12: (["AMT Invoice Dispatcher"],
-         "Stage 12 complete — Final invoice signed. Please send to client immediately (Stage 13).",
+    # Stage 12 — Proforma signed → notify invoicing for final
+    12: (["AMT Invoicing Officer"],
+         "Stage 12 complete — Proforma signed. Please prepare and sign final invoice (Stage 13).",
          True),
-    # Stage 13 — Invoice sent → notify recovery
-    13: (["AMT Recovery Officer"],
-         "Stage 13 complete — Invoice sent to client. Monitor acknowledgment and follow up for payment.",
-         False),
-    # Stage 14 — Client acknowledged → recovery monitors due date
+    # Stage 13 — Final signed → notify dispatcher
+    13: (["AMT Invoice Dispatcher"],
+         "Stage 13 complete — Final invoice signed. Please send to client immediately (Stage 14).",
+         True),
+    # Stage 14 — Invoice sent → notify recovery
     14: (["AMT Recovery Officer"],
-         "Stage 14 complete — Client acknowledged invoice. Monitor due date and follow up.",
+         "Stage 14 complete — Invoice sent to client. Monitor acknowledgment and follow up.",
          False),
-    # Stage 15 — Payment received → prepare for closure
-    15: (["AMT Shipping Run Officer", "AMT Director of Finance"],
-         "Stage 15 complete — Payment received. Please transfer files for closing (Stage 16).",
+    # Stage 15 — Client acknowledged
+    15: (["AMT Recovery Officer"],
+         "Stage 15 complete — Client acknowledged invoice. Monitor due date and follow up.",
          False),
-    # Stage 16 — Files transferred → Director signs
-    16: (["AMT Director of Operations"],
-         "Stage 16 complete — Files transferred for closing. Director signature required (Stage 17).",
+    # Stage 16 — Payment received
+    16: (["AMT Shipping Run Officer", "AMT Director of Finance"],
+         "Stage 16 complete — Payment received. Please transfer files for closing (Stage 17).",
          False),
-    # Stage 17 — Director signed → agent closes
-    17: (["AMT Air Freight Agent", "AMT Sea Freight Agent", "AMT Customs Agent"],
-         "Stage 17 complete — Director signed closure. Please close job in system (Stage 18/19).",
+    # Stage 17 — Files transferred
+    17: (["AMT Director of Operations"],
+         "Stage 17 complete — Files transferred for closing. Director signature required (Stage 18).",
          False),
-    # Stage 18 — Job closed
-    18: (["AMT Director of Operations"],
-         "Stage 18 complete — Job closed in system. File is fully complete.",
+    # Stage 18 — Director signed
+    18: (["AMT Air Freight Agent", "AMT Sea Freight Agent", "AMT Customs Agent"],
+         "Stage 18 complete — Director signed closure. Please close job in system (Stage 19/20).",
          False),
+    # Stage 19/20 — Job closed
     19: (["AMT Director of Operations"],
-         "Stage 19 complete — Job closed in system. File is fully complete.",
+         "Stage 19 complete — Job closed in system. File fully complete.",
+         False),
+    20: (["AMT Director of Operations"],
+         "Stage 20 complete — Job closed in system. File fully complete.",
          False),
 }
+
 
 def get_users_for_role(role):
     """Get enabled user emails for a given role"""
