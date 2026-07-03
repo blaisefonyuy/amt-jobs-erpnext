@@ -53,10 +53,13 @@ def get_permission_query_conditions(user):
             "AND `tabAMT Job File`.customs_agent != ''))"
         )
 
-    # Customs Agents — see CUI/CUE + Transit files assigned to them
+    # Customs Agents — see ONLY files assigned to them
+    # CUI/CUE files where they are the transit_officer
+    # Transit files where they are the customs_agent
     if "AMT Customs Agent" in roles:
         conditions.append(
-            "`tabAMT Job File`.freight_type IN ('Customs Import','Customs Export')"
+            f"(`tabAMT Job File`.freight_type IN ('Customs Import','Customs Export') "
+            f"AND `tabAMT Job File`.transit_officer = '{user}')"
         )
         conditions.append(
             f"`tabAMT Job File`.customs_agent = '{user}'"
@@ -128,9 +131,11 @@ def has_permission(doc, user=None, permission_type=None):
         if any(r in roles for r in ["AMT Head of Sea Freight", "AMT Sea Freight Agent"]):
             return True
 
-    # Customs standalone
+    # Customs standalone — Head sees all, Agent sees only assigned
     if ft in ("Customs Import", "Customs Export"):
-        if any(r in roles for r in ["AMT Customs Head", "AMT Customs Agent"]):
+        if "AMT Customs Head" in roles:
+            return True
+        if "AMT Customs Agent" in roles and doc.transit_officer == user:
             return True
 
     # Customs team on Transit files
