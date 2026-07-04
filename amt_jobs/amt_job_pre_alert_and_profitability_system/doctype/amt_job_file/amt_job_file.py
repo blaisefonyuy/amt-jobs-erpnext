@@ -180,7 +180,8 @@ class AMTJobFile(Document):
             )
 
         # Document requirement check
-        doc_exempt = [2, 4, 6, 14, 15, 16, 17, 18, 19]
+        # 2=auto-verified, 4/7=HOD auth, 15-20=recovery/closure auth
+        doc_exempt = [2, 4, 7, 15, 16, 17, 18, 19, 20]
         if seq not in doc_exempt and not proof_document:
             frappe.throw(
                 f"Stage {seq} ({name}) requires a proof document. "
@@ -195,27 +196,12 @@ class AMTJobFile(Document):
                     "Complete the Cost & Profit Analysis first."
                 )
 
-        # Stage 5 — finance amount required
-        if seq == 6 and not flt(amount):
-            frappe.throw(
-                "Stage 5 requires the Finance Amount Requested. "
-                "Please enter the amount before completing."
-            )
-
-        # Stage 7 — finance release amount required
-        if seq == 8 and not flt(self.finance_amount_released):
-            frappe.throw(
-                "Stage 7 requires the Amount Released by Finance. "
-                "Please enter the amount before completing."
-            )
-
-        # Stage 8 — confirmation amount required
-        if seq == 9 and not flt(self.finance_amount_confirmed):
-            frappe.throw(
-                "Stage 8 requires the Amount Confirmed by Agent. "
-                "Please enter the amount before completing."
-            )
-
+        # Stage 6 — must have at least one finance request
+        if seq == 6:
+            if not self.finance_requests:
+                frappe.throw(
+                    "Please submit a finance request before completing Stage 6."
+                )
         # All checks passed — append to history
         # Sort existing history by seq before appending
         self.stage_history = sorted(self.stage_history, key=lambda x: x.seq)
@@ -231,17 +217,8 @@ class AMTJobFile(Document):
             'amount':         flt(amount) if amount else 0,
         })
 
-        # Auto-fill date fields for finance stages
-        if seq == 5:
-            self.finance_amount_requested = flt(amount)
-            self.finance_request_date     = today()
-        if seq == 7:
-            self.finance_release_date = today()
-        if seq == 8:
-            # Calculate variance
-            released  = flt(self.finance_amount_released)
-            confirmed = flt(self.finance_amount_confirmed)
-            self.finance_variance = released - confirmed
+        # Auto-fill date fields — now handled via Finance Requests table
+        # Old single-request fields removed — finance tracked per request
 
         # Sync current stage
         self._sync_current_stage()
@@ -277,6 +254,8 @@ def flt(value):
 @frappe.whitelist()
 def complete_stage(docname, proof_document=None, notes=None, amount=None):
     """Standalone whitelisted function to complete a stage"""
+    # Always get fresh document to avoid timestamp conflicts
+    frappe.db.commit()  # flush any pending writes
     doc = frappe.get_doc("AMT Job File", docname)
     return doc.complete_stage(
         proof_document=proof_document,

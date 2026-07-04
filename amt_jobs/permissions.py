@@ -26,18 +26,33 @@ def get_permission_query_conditions(user):
 
     conditions = []
 
-    # Air Freight team
-    if "AMT Head of Air Freight" in roles or "AMT Air Freight Agent" in roles:
+    # Air Freight HEAD — sees all Air Freight files
+    if "AMT Head of Air Freight" in roles:
         conditions.append(
             "`tabAMT Job File`.freight_type IN "
             "('Air Freight Import','Air Freight Export')"
         )
 
-    # Sea Freight team
-    if "AMT Head of Sea Freight" in roles or "AMT Sea Freight Agent" in roles:
+    # Air Freight AGENT — sees only files assigned to them
+    if "AMT Air Freight Agent" in roles and "AMT Head of Air Freight" not in roles:
+        conditions.append(
+            f"(`tabAMT Job File`.freight_type IN ('Air Freight Import','Air Freight Export') "
+            f"AND `tabAMT Job File`.transit_officer = '{user}')"
+        )
+
+    # Sea Freight HEAD — sees all Sea Freight files
+    if "AMT Head of Sea Freight" in roles:
         conditions.append(
             "`tabAMT Job File`.freight_type IN "
             "('Sea Freight Import','Sea Freight Export','Sea Freight Groupage')"
+        )
+
+    # Sea Freight AGENT — sees only files assigned to them
+    if "AMT Sea Freight Agent" in roles and "AMT Head of Sea Freight" not in roles:
+        conditions.append(
+            f"(`tabAMT Job File`.freight_type IN "
+            f"('Sea Freight Import','Sea Freight Export','Sea Freight Groupage') "
+            f"AND `tabAMT Job File`.transit_officer = '{user}')"
         )
 
     # Customs Head — sees CUI/CUE + Transit files at Stage 5 (needs customs work)
@@ -84,15 +99,40 @@ def get_permission_query_conditions(user):
             "`tabAMT Job File`.department = 'PSS'"
         )
 
-    # Recovery / Invoicing / Finance Officers see all files in Phase 3/4
+    # Finance team — see files based on their role
+    # Shipping Run Officer — sees files with pending finance requests (Stage 8)
+    if "AMT Shipping Run Officer" in roles:
+        conditions.append(
+            "`tabAMT Job File`.current_stage_seq = 8"
+        )
+
+    # Finance Officer / Director — sees files at Stage 8 (finance release)
     if any(r in roles for r in [
-        "AMT Recovery Officer", "AMT Invoicing Officer",
-        "AMT Invoice Dispatcher", "AMT Finance Officer",
-        "AMT Shipping Run Officer"
+        "AMT Finance Officer", "AMT Director of Finance",
+        "AMT Chief Accountant", "AMT Cashier", "AMT Treasurer"
     ]):
         conditions.append(
-            "`tabAMT Job File`.current_phase IN "
-            "('Phase 3 — Invoicing','Phase 4 — Recovery')"
+            "`tabAMT Job File`.current_stage_seq = 8"
+        )
+
+    # Invoicing team — sees files at Phase 3
+    if any(r in roles for r in [
+        "AMT Invoicing Officer", "AMT Invoice Dispatcher"
+    ]):
+        conditions.append(
+            "`tabAMT Job File`.current_phase = 'Phase 3 — Invoicing'"
+        )
+
+    # Recovery team — sees files at Phase 4
+    if "AMT Recovery Officer" in roles:
+        conditions.append(
+            "`tabAMT Job File`.current_phase = 'Phase 4 — Recovery'"
+        )
+
+    # Shipping Run Officer for closure (Stage 18)
+    if "AMT Shipping Run Officer" in roles:
+        conditions.append(
+            "`tabAMT Job File`.current_stage_seq = 18"
         )
 
     if not conditions:
@@ -123,12 +163,16 @@ def has_permission(doc, user=None, permission_type=None):
 
     # Air Freight
     if ft in ("Air Freight Import", "Air Freight Export"):
-        if any(r in roles for r in ["AMT Head of Air Freight", "AMT Air Freight Agent"]):
+        if "AMT Head of Air Freight" in roles:
+            return True
+        if "AMT Air Freight Agent" in roles and doc.transit_officer == user:
             return True
 
     # Sea Freight
     if ft in ("Sea Freight Import", "Sea Freight Export", "Sea Freight Groupage"):
-        if any(r in roles for r in ["AMT Head of Sea Freight", "AMT Sea Freight Agent"]):
+        if "AMT Head of Sea Freight" in roles:
+            return True
+        if "AMT Sea Freight Agent" in roles and doc.transit_officer == user:
             return True
 
     # Customs standalone — Head sees all, Agent sees only assigned

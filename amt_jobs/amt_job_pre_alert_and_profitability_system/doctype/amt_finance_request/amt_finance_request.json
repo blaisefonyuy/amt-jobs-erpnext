@@ -1,0 +1,183 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-03 10:04:43.839770",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "request_no",
+  "request_date",
+  "amount",
+  "payment_type",
+  "purpose",
+  "status",
+  "sb_verified_by",
+  "sb_verified_date",
+  "sb_notes",
+  "auth_level",
+  "authorized_by",
+  "authorized_date",
+  "released_by",
+  "released_date",
+  "amount_released",
+  "proof_document",
+  "amount_confirmed",
+  "confirmed_by",
+  "confirmed_date",
+  "variance",
+  "variance_reason"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "request_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Req #",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "request_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount (XAF)"
+  },
+  {
+   "columns": 1,
+   "fieldname": "payment_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Payment Type",
+   "options": "\nCash\nBank Transfer"
+  },
+  {
+   "columns": 3,
+   "fieldname": "purpose",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Purpose"
+  },
+  {
+   "columns": 2,
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nVerified\nAuthorized\nReleased\nConfirmed\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_verified_by",
+   "fieldtype": "Data",
+   "label": "Verified By (Shipping Run)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_verified_date",
+   "fieldtype": "Date",
+   "label": "Verification Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_notes",
+   "fieldtype": "Small Text",
+   "label": "Verification Notes"
+  },
+  {
+   "fieldname": "auth_level",
+   "fieldtype": "Select",
+   "label": "Authorization Level",
+   "options": "\nReporting Officer (< 100k)\nFinance Director (\u2265 100k or Bank)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "authorized_by",
+   "fieldtype": "Data",
+   "label": "Authorized By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "authorized_date",
+   "fieldtype": "Date",
+   "label": "Authorization Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "released_by",
+   "fieldtype": "Data",
+   "label": "Released By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "released_date",
+   "fieldtype": "Date",
+   "label": "Release Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount_released",
+   "fieldtype": "Currency",
+   "label": "Amount Released"
+  },
+  {
+   "fieldname": "proof_document",
+   "fieldtype": "Attach",
+   "label": "Proof (slip/transfer)"
+  },
+  {
+   "fieldname": "amount_confirmed",
+   "fieldtype": "Currency",
+   "label": "Amount Confirmed by Agent"
+  },
+  {
+   "fieldname": "confirmed_by",
+   "fieldtype": "Data",
+   "label": "Confirmed By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "confirmed_date",
+   "fieldtype": "Date",
+   "label": "Confirmation Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "variance",
+   "fieldtype": "Currency",
+   "label": "Variance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "variance_reason",
+   "fieldtype": "Small Text",
+   "label": "Variance Reason"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-03 10:04:43.839770",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Finance Request",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

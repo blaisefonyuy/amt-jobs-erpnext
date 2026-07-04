@@ -105,7 +105,13 @@
   "current_phase",
   "stage_history",
   "stage_history_html",
-  "customs_agent"
+  "customs_agent",
+  "sec_finance_requests",
+  "finance_requests",
+  "total_requested",
+  "total_released",
+  "total_confirmed",
+  "finance_requests_html"
  ],
  "fields": [
   {
@@ -358,14 +364,12 @@
   {
    "fieldname": "forecast_margin",
    "fieldtype": "Currency",
-   "label": "Forecast Margin (XAF)",
-   "read_only": 1
+   "label": "Forecast Margin (XAF)"
   },
   {
    "fieldname": "forecast_margin_pct",
    "fieldtype": "Percent",
-   "label": "Forecast Margin %",
-   "read_only": 1
+   "label": "Forecast Margin %"
   },
   {
    "fieldname": "forecast_locked_on",
@@ -609,18 +613,21 @@
    "collapsible": 1,
    "fieldname": "sec_finance",
    "fieldtype": "Section Break",
-   "label": "\ud83d\udcb5 Finance Request & Release"
+   "hidden": 1,
+   "label": "\ud83d\udcb5 Finance Summary (Legacy)"
   },
   {
    "description": "Amount requested by agent in Stage 5 \u2014 based on Cost & Profit Analysis",
    "fieldname": "finance_amount_requested",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Amount Requested (XAF)"
   },
   {
    "description": "Auto-filled when Stage 5 is completed",
    "fieldname": "finance_request_date",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Request Date",
    "read_only": 1
   },
@@ -628,6 +635,7 @@
    "description": "Brief description of what the funds will be used for",
    "fieldname": "finance_request_justification",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Justification / Purpose"
   },
   {
@@ -638,12 +646,14 @@
    "description": "Amount actually released by Finance Officer in Stage 7",
    "fieldname": "finance_amount_released",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Amount Released by Finance (XAF)"
   },
   {
    "description": "Auto-filled when Stage 7 is completed",
    "fieldname": "finance_release_date",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Release Date",
    "read_only": 1
   },
@@ -651,12 +661,14 @@
    "description": "Amount agent confirms receiving in hand \u2014 Stage 8",
    "fieldname": "finance_amount_confirmed",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Amount Confirmed by Agent (XAF)"
   },
   {
    "description": "Auto-calculated \u2014 should be zero. Any difference must be explained.",
    "fieldname": "finance_variance",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Variance (Released vs Confirmed)",
    "read_only": 1
   },
@@ -664,6 +676,7 @@
    "description": "Required if variance is not zero",
    "fieldname": "finance_variance_reason",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Variance Explanation"
   },
   {
@@ -726,12 +739,51 @@
    "fieldtype": "Link",
    "label": "Customs Agent Assigned",
    "options": "User"
+  },
+  {
+   "fieldname": "sec_finance_requests",
+   "fieldtype": "Section Break",
+   "label": "\ud83d\udcb5 Finance Requests"
+  },
+  {
+   "fieldname": "finance_requests",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Finance Requests",
+   "options": "AMT Finance Request"
+  },
+  {
+   "description": "Auto-calculated from all finance requests",
+   "fieldname": "total_requested",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Total Requested (XAF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_released",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Total Released (XAF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_confirmed",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Total Confirmed by Agent (XAF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "finance_requests_html",
+   "fieldtype": "HTML",
+   "label": "Finance Requests Display"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-02 20:47:52.922320",
+ "modified": "2026-07-03 16:59:30.395418",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Job File",

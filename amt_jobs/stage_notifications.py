@@ -292,3 +292,86 @@ def on_stage_complete(doc, completed_seq, completed_by):
 
     except Exception as e:
         frappe.log_error(str(e), "Stage Notification")
+
+def notify_finance_request(docname, request_no, amount, payment_type, purpose, auth_level):
+    """Notify Shipping Run Officer when a new finance request is submitted"""
+    try:
+        doc = frappe.get_doc('AMT Job File', docname)
+        
+        # Get Shipping Run Officers
+        recipients = get_users_for_role('AMT Shipping Run Officer')
+        
+        # Also notify based on auth level
+        if 'Finance Director' in auth_level:
+            recipients += get_users_for_role('AMT Director of Finance')
+        else:
+            recipients += get_users_for_role('AMT Chief Accountant')
+            recipients += get_users_for_role('AMT Finance Officer')
+
+        if not recipients:
+            recipients = get_users_for_role('AMT Director of Finance')
+
+        amount_fmt = f"{float(amount):,.0f}"
+        
+        frappe.sendmail(
+            recipients=list(set(recipients)),
+            subject=f"💵 Finance Request #{request_no} — {docname} — {amount_fmt} XAF",
+            message=f"""
+            <div style="font-family:Arial,sans-serif;max-width:640px;">
+                <div style="background:#1F3864;padding:14px 20px;border-radius:6px 6px 0 0;">
+                    <h2 style="color:#fff;margin:0;">💵 New Finance Request</h2>
+                    <p style="color:#fff;opacity:.9;margin:4px 0 0;">
+                        {docname} — {doc.client_name or ''}</p>
+                </div>
+                <div style="border:1px solid #dde3ee;padding:20px;border-radius:0 0 6px 6px;">
+                    <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                        <tr style="background:#f5f6fa;">
+                            <td style="padding:8px 12px;font-weight:600;">Request #:</td>
+                            <td style="padding:8px 12px;">{request_no}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 12px;font-weight:600;">Amount:</td>
+                            <td style="padding:8px 12px;font-size:16px;font-weight:700;
+                                color:#1F3864;">{amount_fmt} XAF</td>
+                        </tr>
+                        <tr style="background:#f5f6fa;">
+                            <td style="padding:8px 12px;font-weight:600;">Payment Type:</td>
+                            <td style="padding:8px 12px;">{payment_type}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 12px;font-weight:600;">Purpose:</td>
+                            <td style="padding:8px 12px;">{purpose}</td>
+                        </tr>
+                        <tr style="background:#f5f6fa;">
+                            <td style="padding:8px 12px;font-weight:600;">Auth Level:</td>
+                            <td style="padding:8px 12px;color:#C00000;font-weight:600;">
+                                {auth_level}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 12px;font-weight:600;">Client:</td>
+                            <td style="padding:8px 12px;">{doc.client_name or ''}</td>
+                        </tr>
+                        <tr style="background:#f5f6fa;">
+                            <td style="padding:8px 12px;font-weight:600;">Freight Type:</td>
+                            <td style="padding:8px 12px;">{doc.freight_type or ''}</td>
+                        </tr>
+                    </table>
+                    <br/>
+                    <p style="color:#555;font-size:13px;">
+                        <b>Action Required:</b> Please verify this request in Navision 
+                        (check if pre-booked/forecasted) then authorize or reject.
+                    </p>
+                    <a href="https://portal.amtcm-sa.com/app/amt-job-file/{docname}"
+                       style="background:#1F3864;color:#fff;padding:12px 24px;
+                              text-decoration:none;border-radius:4px;font-weight:bold;
+                              display:inline-block;">
+                        Open File & Process Request →
+                    </a>
+                </div>
+            </div>
+            """,
+        )
+        frappe.logger().info(
+            f"[Finance Request] #{request_no} on {docname} → {recipients}")
+    except Exception as e:
+        frappe.log_error(str(e), "Finance Request Notification")
