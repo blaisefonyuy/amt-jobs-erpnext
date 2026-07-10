@@ -249,12 +249,25 @@ app_license = "mit"
 
 # Navision daily sync — runs every day at 06:00
 scheduler_events = {
-    "daily": [
-        "amt_jobs.navision_sync.sync_navision_dates",
-    ],
-    "hourly": [
-        "amt_jobs.server_script.execute",
-    ],
+    # Navision sync — twice daily
+    # 07:00 UTC = 08:00 Cameroon (WAT)
+    # 23:00 UTC = 00:00 Cameroon (midnight)
+    "cron": {
+        "0 7 * * *": [
+            "amt_jobs.navision_sync.sync_now",
+        ],
+        "0 23 * * *": [
+            "amt_jobs.navision_sync.sync_now",
+        ],
+        # SLA alerts — morning check 08:00 Cameroon
+        "0 7 * * *": [
+            "amt_jobs.server_script.run_sla_alerts",
+        ],
+        # SLA alerts — afternoon check 14:00 Cameroon
+        "0 13 * * *": [
+            "amt_jobs.server_script.run_sla_alerts",
+        ],
+    },
 }
 
 # DocType events

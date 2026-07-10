@@ -375,3 +375,12 @@ def _send_alert(doc, phase, level, days, sla_days, action_message, recipient_key
         frappe.sendmail(recipients=recipients, subject=subject, message=message)
     except Exception as e:
         frappe.log_error(str(e), "SLA Alert Email")
+
+
+def run_sla_alerts():
+    """Wrapper for SLA alert system — called by scheduler"""
+    try:
+        execute()
+    except Exception as e:
+        import frappe
+        frappe.log_error(str(e), "SLA Alert Error")
