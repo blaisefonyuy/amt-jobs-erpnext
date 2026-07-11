@@ -1,0 +1,312 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:invoice_no",
+ "creation": "2026-07-10 18:33:47.527917",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "invoice_no",
+  "posting_date",
+  "job_no",
+  "col1",
+  "client_code",
+  "client_name",
+  "currency",
+  "sec_amounts",
+  "amount_ht",
+  "amount_tva",
+  "amount_ttc",
+  "col2",
+  "wht_applies",
+  "wht_rate",
+  "wht_amount",
+  "training_tax",
+  "training_tax_amount",
+  "net_a_payer",
+  "sec_meta",
+  "nav_wht_amount",
+  "wht_source",
+  "synced_at",
+  "sec_lines",
+  "lines"
+ ],
+ "fields": [
+  {
+   "bold": 1,
+   "fieldname": "invoice_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Invoice No.",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job No.",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "client_code",
+   "fieldtype": "Data",
+   "label": "Client Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Client Name",
+   "read_only": 1
+  },
+  {
+   "default": "XAF",
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_amounts",
+   "fieldtype": "Section Break",
+   "label": "\ud83d\udcb0 Invoice Amounts"
+  },
+  {
+   "fieldname": "amount_ht",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Montant HT",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount_tva",
+   "fieldtype": "Currency",
+   "label": "Montant TVA",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "amount_ttc",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Montant TTC",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "wht_applies",
+   "fieldtype": "Check",
+   "label": "WHT Applicable",
+   "read_only": 1
+  },
+  {
+   "default": "2.2",
+   "fieldname": "wht_rate",
+   "fieldtype": "Percent",
+   "label": "Taux AIB (%)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "wht_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Montant AIB Retenu",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "training_tax",
+   "fieldtype": "Check",
+   "label": "Taxe Formation Applicable",
+   "read_only": 1
+  },
+  {
+   "fieldname": "training_tax_amount",
+   "fieldtype": "Currency",
+   "label": "Montant Taxe Formation",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "net_a_payer",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "NET \u00c0 PAYER",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "sec_meta",
+   "fieldtype": "Section Break",
+   "label": "Navision Info"
+  },
+  {
+   "description": "Original WHT from Navision \u2014 0 means calculated by ERPNext",
+   "fieldname": "nav_wht_amount",
+   "fieldtype": "Currency",
+   "label": "WHT Amount (Navision)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "wht_source",
+   "fieldtype": "Select",
+   "label": "WHT Source",
+   "options": "Navision\nCalculated (2.2%)\nCalculated (5.5%)\nNone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "synced_at",
+   "fieldtype": "Datetime",
+   "label": "Last Synced",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_lines",
+   "fieldtype": "Section Break",
+   "label": "\ud83d\udccb Invoice Lines"
+  },
+  {
+   "fieldname": "lines",
+   "fieldtype": "Table",
+   "label": "Invoice Lines",
+   "options": "AMT Sales Invoice Line",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-10 19:21:13.118354",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Sales Invoice",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director of Operations",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director General",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director of Finance",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Finance Officer",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Chief Accountant",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoicing Officer",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoice Dispatcher",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of Air Freight",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Head of Sea Freight",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Customs Head",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "search_fields": "invoice_no,client_name,job_no",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "invoice_no",
+ "track_changes": 1
+}

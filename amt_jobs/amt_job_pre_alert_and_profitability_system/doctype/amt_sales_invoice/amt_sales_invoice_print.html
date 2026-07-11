@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #000; margin: 0; padding: 20px; }
+    .header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .company-info { font-size: 11px; }
+    .company-name { font-size: 16px; font-weight: bold; color: #1F3864; }
+    .invoice-title { text-align: right; }
+    .invoice-title h1 { font-size: 22px; color: #1F3864; margin: 0; }
+    .invoice-no { font-size: 14px; font-weight: bold; color: #C9A227; }
+    .client-section { margin: 20px 0; padding: 12px; background: #f5f6fa; border-left: 3px solid #1F3864; }
+    .client-name { font-weight: bold; font-size: 13px; }
+    .job-ref { color: #666; font-size: 11px; margin-top: 4px; }
+    .amounts-table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+    .amounts-table td { padding: 8px 12px; }
+    .amounts-table .label { color: #555; }
+    .amounts-table .amount { text-align: right; font-weight: 600; }
+    .divider { border-top: 1px solid #ddd; }
+    .divider-bold { border-top: 2px solid #1F3864; }
+    .wht-row td { color: #C00000; }
+    .net-row { background: #1F3864; }
+    .net-row td { color: #fff; font-weight: bold; font-size: 14px; padding: 10px 12px; }
+    .footer-note { margin-top: 20px; font-size: 10px; color: #666; border-top: 1px solid #eee; padding-top: 10px; }
+    .stamp-area { margin-top: 40px; display: flex; justify-content: space-between; }
+    .stamp-box { border: 1px solid #ddd; padding: 10px; width: 200px; min-height: 80px; font-size: 11px; color: #888; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="company-info">
+        <div class="company-name">AMT CAMEROUN S.A.</div>
+        <div>B.P. 4057 Douala — Cameroun</div>
+        <div>Tél: +237 233 42 47 47</div>
+        <div>NIU: M081400036899F</div>
+        <div>RC: RC/DLA/1998/B/1234</div>
+    </div>
+    <div class="invoice-title">
+        <h1>FACTURE</h1>
+        <div class="invoice-no">{{ doc.invoice_no }}</div>
+        <div style="margin-top:6px;font-size:11px;color:#666;">
+            Date: {{ frappe.format(doc.posting_date, {'fieldtype':'Date'}) }}
+        </div>
+        {% if doc.job_no %}
+        <div style="font-size:11px;color:#666;">Réf. Dossier: {{ doc.job_no }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- CLIENT -->
+<div class="client-section">
+    <div style="font-size:10px;color:#888;text-transform:uppercase;">Facturé à</div>
+    <div class="client-name">{{ doc.client_name }}</div>
+    <div class="job-ref">Code client: {{ doc.client_code }}</div>
+</div>
+
+<!-- AMOUNTS SUMMARY -->
+<table class="amounts-table">
+    <tr>
+        <td class="label">Montant Hors Taxes (HT)</td>
+        <td class="amount">{{ frappe.format(doc.amount_ht, {'fieldtype':'Currency'}) }} {{ doc.currency or 'XAF' }}</td>
+    </tr>
+    <tr>
+        <td class="label">TVA (19.25%)</td>
+        <td class="amount">{{ frappe.format(doc.amount_tva, {'fieldtype':'Currency'}) }} {{ doc.currency or 'XAF' }}</td>
+    </tr>
+    <tr class="divider">
+        <td colspan="2" style="padding:0;"></td>
+    </tr>
+    <tr>
+        <td class="label" style="font-weight:bold;">Montant TTC</td>
+        <td class="amount" style="font-weight:bold;">{{ frappe.format(doc.amount_ttc, {'fieldtype':'Currency'}) }} {{ doc.currency or 'XAF' }}</td>
+    </tr>
+
+    {% if doc.wht_applies and doc.wht_amount %}
+    <tr>
+        <td colspan="2" style="padding:4px 0;"></td>
+    </tr>
+    <tr class="wht-row">
+        <td class="label">AIB / Précompte retenu à la source ({{ doc.wht_rate }}%)</td>
+        <td class="amount">({{ frappe.format(doc.wht_amount, {'fieldtype':'Currency'}) }}) {{ doc.currency or 'XAF' }}</td>
+    </tr>
+    {% endif %}
+
+    {% if doc.training_tax and doc.training_tax_amount %}
+    <tr class="wht-row">
+        <td class="label">Taxe de Formation Professionnelle</td>
+        <td class="amount">({{ frappe.format(doc.training_tax_amount, {'fieldtype':'Currency'}) }}) {{ doc.currency or 'XAF' }}</td>
+    </tr>
+    {% endif %}
+
+    {% if doc.wht_applies %}
+    <tr class="divider-bold">
+        <td colspan="2" style="padding:0;"></td>
+    </tr>
+    <tr class="net-row">
+        <td>NET À PAYER</td>
+        <td style="text-align:right;">{{ frappe.format(doc.net_a_payer, {'fieldtype':'Currency'}) }} {{ doc.currency or 'XAF' }}</td>
+    </tr>
+    {% endif %}
+</table>
+
+{% if doc.wht_applies %}
+<div class="footer-note">
+    <p>Retenue à la source opérée par le client en sa qualité d'entité habilitée conformément
+    aux dispositions fiscales en vigueur au Cameroun.</p>
+    <p>Le montant retenu au titre de l'AIB/Précompte constitue un acompte d'impôt imputable
+    par AMT Cameroun S.A. sur sa déclaration statistique et fiscale (DSF).</p>
+    <p style="color:#888;">Source calcul: {{ doc.wht_source }}</p>
+</div>
+{% endif %}
+
+<!-- SIGNATURE AREA -->
+<div class="stamp-area">
+    <div class="stamp-box">
+        <div style="font-weight:bold;margin-bottom:8px;">Émis par AMT Cameroun S.A.</div>
+        <div>Signature & Cachet</div>
+    </div>
+    <div class="stamp-box">
+        <div style="font-weight:bold;margin-bottom:8px;">Reçu et approuvé par le Client</div>
+        <div>Signature & Cachet</div>
+    </div>
+</div>
+
+</body>
+</html>

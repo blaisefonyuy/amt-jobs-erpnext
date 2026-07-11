@@ -267,6 +267,10 @@ scheduler_events = {
         "0 13 * * *": [
             "amt_jobs.server_script.run_sla_alerts",
         ],
+        # Invoice sync — every 2 hours during business hours
+        "0 6,8,10,12,14,16,18 * * *": [
+            "amt_jobs.invoice_sync.sync_invoices",
+        ],
     },
 }
 
