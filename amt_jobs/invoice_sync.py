@@ -203,7 +203,10 @@ def sync_invoices():
             doc.client_address2     = (d.get('client_address2') or '').strip()
             doc.client_city         = (d.get('client_city') or '').strip()
             doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
-            doc.comments            = (d.get('comments') or '').strip()
+            # Don't auto-populate comments from Navision Posting Description
+            # Agent fills this manually with cargo description
+            if not frappe.db.get_value('AMT Sales Invoice', invoice_no, 'comments'):
+                doc.comments = ''  # Leave blank for agent to fill
             doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
             doc.posting_date        = d['posting_date']
             doc.job_no              = (d['job_no'] or '').strip()

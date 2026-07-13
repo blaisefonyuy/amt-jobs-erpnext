@@ -38,7 +38,8 @@
   "client_vat_no",
   "comments",
   "vessel_flight",
-  "issued_by"
+  "issued_by",
+  "bl_number"
  ],
  "fields": [
   {
@@ -230,28 +231,33 @@
    "read_only": 1
   },
   {
+   "description": "e.g. 01 COLIS DE 2 KG / FACT N\u00b0...",
    "fieldname": "comments",
    "fieldtype": "Small Text",
-   "label": "Comments",
-   "read_only": 1
+   "label": "Cargo Description / Comments"
   },
   {
+   "description": "Enter vessel name or flight number",
    "fieldname": "vessel_flight",
    "fieldtype": "Data",
-   "label": "Vessel / Flight",
-   "read_only": 1
+   "label": "Vessel / Flight"
   },
   {
    "fieldname": "issued_by",
    "fieldtype": "Data",
    "label": "Issued By",
    "read_only": 1
+  },
+  {
+   "fieldname": "bl_number",
+   "fieldtype": "Data",
+   "label": "BL N\u00b0 / Book N\u00b0 / Resa N\u00b0"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-13 14:54:25.614552",
+ "modified": "2026-07-13 16:30:44.386479",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Sales Invoice",
@@ -309,7 +315,8 @@
    "read": 1,
    "report": 1,
    "role": "AMT Invoicing Officer",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "email": 1,
@@ -318,7 +325,8 @@
    "read": 1,
    "report": 1,
    "role": "AMT Invoice Dispatcher",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "email": 1,
@@ -363,7 +371,8 @@
    "read": 1,
    "report": 1,
    "role": "AMT Invoicing Agent",
-   "share": 1
+   "share": 1,
+   "write": 1
   },
   {
    "email": 1,
