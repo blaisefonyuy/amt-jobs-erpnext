@@ -105,6 +105,8 @@ def sync_invoices():
                 l.[Amount Including VAT]  AS amount_ttc,
                 l.[Unit of Measure Code]  AS uom,
                 l.[Outlay Category]       AS outlay_category,
+                l.[WHT Product Posting Group] AS wht_prod_group,
+                l.[Gen_ Prod_ Posting Group]  AS gen_prod_group,
                 l.[Bold]                  AS is_bold,
                 l.[End Text]              AS end_text,
                 l.[Sub Total (Report)]    AS is_subtotal
@@ -159,12 +161,14 @@ def sync_invoices():
                 wht_rate    = WHT_RATES.get(wht_group, 2.2)
                 training_tax = client_wht.get('training_tax', False)
 
+                # WHT base = SERVICES only (not pass-through outlays)
+                # We'll calculate from line items after sync
+                # For now use nav_wht if available, else calculate on HT
                 if nav_wht > 0:
-                    # Use Navision value
                     wht_amount = nav_wht
                     wht_source = 'Navision'
                 elif wht_rate > 0:
-                    # Calculate
+                    # Will be recalculated after lines are loaded
                     wht_amount = round(ht * wht_rate / 100, 0)
                     wht_source = f'Calculated ({wht_rate}%)'
                 else:
@@ -202,16 +206,29 @@ def sync_invoices():
 
             # Sync line items
             doc.lines = []
+            service_total_for_wht = 0.0
             for line in invoice_lines.get(invoice_no, []):
                 desc = (line['description'] or '').strip()
                 if not desc and not float(line['amount'] or 0):
                     continue
-                outlay = (line['outlay_category'] or '').strip()
-                line_type = 'Outlay' if outlay == 'OUT' else 'Service'
+                line_amount = float(line['amount'] or 0)
+                wht_grp = (line.get('wht_prod_group') or '').strip()
+                # Use WHT Product Posting Group to classify lines
                 if line['is_subtotal']:
                     line_type = 'Subtotal'
-                if line['end_text']:
+                elif line['end_text']:
                     line_type = 'Text'
+                elif wht_grp == 'WHT_0':
+                    line_type = 'Outlay'  # Pure pass-through — no WHT
+                elif wht_grp:
+                    line_type = 'Service'  # AMT service — WHT applies
+                else:
+                    line_type = 'Outlay'  # Default to outlay if unknown
+
+                # Accumulate WHT base (services only)
+                if wht_grp and wht_grp != 'WHT_0':
+                    service_total_for_wht += line_amount
+
                 doc.append('lines', {
                     'line_no':      int(line['line_no'] or 0),
                     'description':  desc,
@@ -219,12 +236,18 @@ def sync_invoices():
                     'quantity':     float(line['quantity'] or 0),
                     'unit_price':   float(line['unit_price'] or 0),
                     'vat_pct':      float(line['vat_pct'] or 0),
-                    'amount':       float(line['amount'] or 0),
+                    'amount':       line_amount,
                     'amount_ttc':   float(line['amount_ttc'] or 0),
                     'uom':          (line['uom'] or '').strip(),
                     'line_type':    line_type,
                     'is_bold':      int(line['is_bold'] or 0),
                 })
+
+            # Recalculate WHT on SERVICES only (not outlays)
+            if wht_applies and wht_rate > 0 and service_total_for_wht > 0 and nav_wht == 0:
+                doc.wht_amount  = round(service_total_for_wht * wht_rate / 100, 0)
+                doc.net_a_payer = ttc - doc.wht_amount - training_tax_amount
+                doc.wht_source  = f'Calculated ({wht_rate}%) on services'
 
             doc.flags.ignore_permissions = True
             doc.flags.ignore_mandatory   = True

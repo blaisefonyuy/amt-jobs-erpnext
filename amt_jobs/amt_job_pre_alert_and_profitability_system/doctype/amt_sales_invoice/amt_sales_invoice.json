@@ -170,7 +170,7 @@
    "fieldname": "wht_source",
    "fieldtype": "Select",
    "label": "WHT Source",
-   "options": "Navision\nCalculated (2.2%)\nCalculated (5.5%)\nNone",
+   "options": "Navision\nCalculated (2.2%)\nCalculated (2.2%) on services\nCalculated (5.5%)\nCalculated (5.5%) on services\nNone",
    "read_only": 1
   },
   {
@@ -195,7 +195,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-10 19:21:13.118354",
+ "modified": "2026-07-13 11:01:09.125975",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Sales Invoice",
