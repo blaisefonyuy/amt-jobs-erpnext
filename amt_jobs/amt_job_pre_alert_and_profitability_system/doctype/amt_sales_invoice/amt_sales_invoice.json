@@ -30,7 +30,15 @@
   "wht_source",
   "synced_at",
   "sec_lines",
-  "lines"
+  "lines",
+  "client_name2",
+  "client_address",
+  "client_address2",
+  "client_city",
+  "client_vat_no",
+  "comments",
+  "vessel_flight",
+  "issued_by"
  ],
  "fields": [
   {
@@ -190,12 +198,60 @@
    "label": "Invoice Lines",
    "options": "AMT Sales Invoice Line",
    "read_only": 1
+  },
+  {
+   "fieldname": "client_name2",
+   "fieldtype": "Data",
+   "label": "Client Name 2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_address",
+   "fieldtype": "Data",
+   "label": "Client Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_address2",
+   "fieldtype": "Data",
+   "label": "Client Address 2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_city",
+   "fieldtype": "Data",
+   "label": "Client City",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_vat_no",
+   "fieldtype": "Data",
+   "label": "Client NIU/VAT No.",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vessel_flight",
+   "fieldtype": "Data",
+   "label": "Vessel / Flight",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Data",
+   "label": "Issued By",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-13 11:01:09.125975",
+ "modified": "2026-07-13 14:44:22.661116",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Sales Invoice",
@@ -298,6 +354,24 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoicing Agent",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Recovery Officer",
    "share": 1
   }
  ],

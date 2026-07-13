@@ -74,6 +74,13 @@ def sync_invoices():
                 h.[_ Witholding tax]             AS nav_wht_flag,
                 h.[_ Training tax]               AS nav_training_flag,
                 h.[Amount Training Tax]          AS nav_training_amount,
+                h.[Bill-to Name 2]               AS client_name2,
+                h.[Bill-to Address]              AS client_address,
+                h.[Bill-to Address 2]            AS client_address2,
+                h.[Bill-to City]                 AS client_city,
+                h.[VAT Registration No_]         AS client_vat_no,
+                h.[Posting Description]          AS comments,
+                h.[User ID]                      AS issued_by,
                 SUM(l.[Amount])                  AS amount_ht,
                 SUM(l.[Amount Including VAT])    AS amount_ttc,
                 SUM(l.[VAT Base Amount])         AS vat_base
@@ -85,7 +92,10 @@ def sync_invoices():
                 h.[No_], h.[Bill-to Customer No_], h.[Bill-to Name],
                 h.[Posting Date], h.[Job No], h.[Currency Code],
                 h.[Amount Witholding Tax], h.[Total of Line Amount incl_VAT],
-                h.[_ Witholding tax], h.[_ Training tax], h.[Amount Training Tax]
+                h.[_ Witholding tax], h.[_ Training tax], h.[Amount Training Tax],
+                h.[Bill-to Name 2], h.[Bill-to Address], h.[Bill-to Address 2],
+                h.[Bill-to City], h.[VAT Registration No_],
+                h.[Posting Description], h.[User ID]
             ORDER BY h.[Posting Date] DESC
         """)
         
@@ -188,6 +198,13 @@ def sync_invoices():
 
             doc.client_code         = client_code
             doc.client_name         = (d['client_name'] or '').strip()
+            doc.client_name2        = (d.get('client_name2') or '').strip()
+            doc.client_address      = (d.get('client_address') or '').strip()
+            doc.client_address2     = (d.get('client_address2') or '').strip()
+            doc.client_city         = (d.get('client_city') or '').strip()
+            doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
+            doc.comments            = (d.get('comments') or '').strip()
+            doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
             doc.posting_date        = d['posting_date']
             doc.job_no              = (d['job_no'] or '').strip()
             doc.currency            = (d['currency'] or 'XAF').strip() or 'XAF'
