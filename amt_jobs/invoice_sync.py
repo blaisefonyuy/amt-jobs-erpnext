@@ -81,6 +81,8 @@ def sync_invoices():
                 h.[VAT Registration No_]         AS client_vat_no,
                 h.[Posting Description]          AS comments,
                 h.[User ID]                      AS issued_by,
+                h.[Payment Terms Code]           AS payment_terms,
+                h.[Due Date]                     AS due_date,
                 SUM(l.[Amount])                  AS amount_ht,
                 SUM(l.[Amount Including VAT])    AS amount_ttc,
                 SUM(l.[VAT Base Amount])         AS vat_base
@@ -95,7 +97,8 @@ def sync_invoices():
                 h.[_ Witholding tax], h.[_ Training tax], h.[Amount Training Tax],
                 h.[Bill-to Name 2], h.[Bill-to Address], h.[Bill-to Address 2],
                 h.[Bill-to City], h.[VAT Registration No_],
-                h.[Posting Description], h.[User ID]
+                h.[Posting Description], h.[User ID],
+                h.[Payment Terms Code], h.[Due Date]
             ORDER BY h.[Posting Date] DESC
         """)
         
@@ -208,6 +211,8 @@ def sync_invoices():
             if not frappe.db.get_value('AMT Sales Invoice', invoice_no, 'comments'):
                 doc.comments = ''  # Leave blank for agent to fill
             doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
+            doc.payment_terms       = (d.get('payment_terms') or '').strip()
+            doc.due_date            = d.get('due_date')
             doc.posting_date        = d['posting_date']
             doc.job_no              = (d['job_no'] or '').strip()
             doc.currency            = (d['currency'] or 'XAF').strip() or 'XAF'

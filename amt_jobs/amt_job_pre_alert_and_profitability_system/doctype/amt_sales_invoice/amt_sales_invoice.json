@@ -39,7 +39,9 @@
   "comments",
   "vessel_flight",
   "issued_by",
-  "bl_number"
+  "bl_number",
+  "payment_terms",
+  "due_date"
  ],
  "fields": [
   {
@@ -252,12 +254,24 @@
    "fieldname": "bl_number",
    "fieldtype": "Data",
    "label": "BL N\u00b0 / Book N\u00b0 / Resa N\u00b0"
+  },
+  {
+   "fieldname": "payment_terms",
+   "fieldtype": "Data",
+   "label": "Payment Terms",
+   "read_only": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-13 16:30:44.386479",
+ "modified": "2026-07-14 09:35:41.856810",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Sales Invoice",
