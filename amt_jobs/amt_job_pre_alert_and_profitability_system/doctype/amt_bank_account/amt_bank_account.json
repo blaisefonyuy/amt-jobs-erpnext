@@ -1,0 +1,24 @@
+{
+ "doctype": "DocType",
+ "name": "AMT Bank Account",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "istable": 0,
+ "autoname": "field:bank_code",
+ "title_field": "bank_name",
+ "fields": [
+  {"fieldname":"bank_code","fieldtype":"Data","label":"Bank Code (Navision)","reqd":1,"in_list_view":1,"idx":1},
+  {"fieldname":"bank_name","fieldtype":"Data","label":"Bank Name","reqd":1,"in_list_view":1,"idx":2},
+  {"fieldname":"account_name","fieldtype":"Data","label":"Account Name","in_list_view":1,"idx":3},
+  {"fieldname":"iban","fieldtype":"Data","label":"IBAN","in_list_view":1,"idx":4},
+  {"fieldname":"swift","fieldtype":"Data","label":"Swift Code","in_list_view":1,"idx":5},
+  {"fieldname":"currency","fieldtype":"Data","label":"Currency","default":"XAF","idx":6},
+  {"fieldname":"is_default","fieldtype":"Check","label":"Default Account","default":"0","idx":7}
+ ],
+ "permissions": [
+  {"role":"System Manager","read":1,"write":1,"create":1,"delete":1},
+  {"role":"AMT Director of Finance","read":1,"write":1,"create":1,"delete":1},
+  {"role":"AMT Invoicing Agent","read":1},
+  {"role":"AMT Invoicing Officer","read":1},
+  {"role":"AMT Invoice Dispatcher","read":1}
+ ]
+}
