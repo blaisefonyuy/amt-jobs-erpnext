@@ -9,15 +9,29 @@ from amt_jobs.navision_sync import get_connection
 # WHT rates by WHT Business Posting Group
 # EXO-WHT2.2 = clients who withhold AIB at 2.2% (habilitated entities)
 # Add more groups as Navision is configured
+import re as _re
+
 WHT_RATES = {
-    'EXO-WHT2.2': 2.2,  # Standard AIB rate — habilitated entities
-    'EXO-WHT5.5': 5.5,  # Higher rate — inactive NIU
-    'EXONERE':    0.0,   # Exempt from WHT
-    'ETRANGER':   0.0,   # Foreign clients — no WHT
-    'INTERCO':    0.0,   # Intercompany — no WHT
-    'LOCAL':      0.0,   # Local clients — check case by case
-    '':           0.0,   # Unknown — default to 0 until confirmed
+    'EXO-WHT2.2': 2.2, 'EXO-WHT5.5': 5.5,
+    'WHT 2.2%':   2.2, 'WHT 5.5%':   5.5,
+    'WHT2.2':     2.2, 'WHT5.5':     5.5,
+    'EXONERE':    0.0, 'ETRANGER':   0.0,
+    'INTERCO':    0.0, 'LOCAL':      0.0,
+    '':           0.0,
 }
+
+def get_wht_rate(group):
+    """Get WHT rate from group name dynamically — handles any naming convention"""
+    if not group:
+        return 0.0
+    group = group.strip()
+    if group in WHT_RATES:
+        return WHT_RATES[group]
+    # Extract numeric rate from group name e.g. 'WHT 5.5%' -> 5.5
+    match = _re.search(r'(\d+\.?\d*)\s*%?$', group)
+    if match:
+        return float(match.group(1))
+    return 0.0
 
 def get_wht_clients(conn):
     """Get all clients with WHT applicable from Navision"""
@@ -171,7 +185,7 @@ def sync_invoices():
             if client_wht.get('wht_applies'):
                 wht_applies = True
                 wht_group   = client_wht.get('wht_group', '')
-                wht_rate    = WHT_RATES.get(wht_group, 2.2)
+                wht_rate    = get_wht_rate(wht_group)
                 training_tax = client_wht.get('training_tax', False)
 
                 # WHT base = SERVICES only (not pass-through outlays)
