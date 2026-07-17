@@ -45,7 +45,8 @@
   "client_niu",
   "client_rccm",
   "vat_exempt",
-  "vat_exempt_ref"
+  "vat_exempt_ref",
+  "client_bank_code"
  ],
  "fields": [
   {
@@ -294,12 +295,19 @@
    "fieldtype": "Data",
    "label": "R\u00e9f. Attestation Exon\u00e9ration",
    "read_only": 1
+  },
+  {
+   "fieldname": "client_bank_code",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Client Bank Code",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-16 17:44:39.449718",
+ "modified": "2026-07-17 09:25:02.845858",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Sales Invoice",

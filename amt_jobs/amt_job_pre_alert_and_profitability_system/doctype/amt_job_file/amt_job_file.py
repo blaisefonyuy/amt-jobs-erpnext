@@ -10,13 +10,68 @@ class AMTJobFile(Document):
         self._sync_current_stage()
 
     def on_update(self):
-        """Notify customs agent when assigned by Customs HOD"""
+        """Notify agent when job is assigned, and customs agent when assigned by HOD"""
+        old_doc = self.get_doc_before_save()
+
+        # ── Transit officer assignment notification ──────────────────
+        if self.transit_officer:
+            old_officer = old_doc.transit_officer if old_doc else None
+            if self.transit_officer != old_officer:
+                try:
+                    frappe.sendmail(
+                        recipients=[self.transit_officer],
+                        subject=f"📋 Job File Assigned — {self.name}",
+                        message=f"""
+                        <div style="font-family:Arial,sans-serif;max-width:640px;">
+                            <div style="background:#1F3864;padding:14px 20px;border-radius:6px 6px 0 0;">
+                                <h2 style="color:#fff;margin:0;">📋 New Job File Assigned</h2>
+                                <p style="color:#fff;opacity:.9;margin:4px 0 0;">
+                                    {self.name} — {self.client_name or ''}</p>
+                            </div>
+                            <div style="border:1px solid #dde3ee;padding:20px;border-radius:0 0 6px 6px;">
+                                <p>A job file has been assigned to you.</p>
+                                <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                                    <tr style="background:#f5f6fa;">
+                                        <td style="padding:8px 12px;font-weight:600;">Job File:</td>
+                                        <td style="padding:8px 12px;">{self.name}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 12px;font-weight:600;">Client:</td>
+                                        <td style="padding:8px 12px;">{self.client_name or ''}</td>
+                                    </tr>
+                                    <tr style="background:#f5f6fa;">
+                                        <td style="padding:8px 12px;font-weight:600;">Operation Type:</td>
+                                        <td style="padding:8px 12px;">{self.freight_type or ''}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:8px 12px;font-weight:600;">Current Stage:</td>
+                                        <td style="padding:8px 12px;font-weight:600;color:#1F3864;">
+                                            Stage {self.current_stage_seq}: {self.current_stage_name or ''}</td>
+                                    </tr>
+                                </table>
+                                <br/>
+                                <a href="https://portal.amtcm-sa.com/app/amt-job-file/{self.name}"
+                                   style="background:#1F3864;color:#fff;padding:12px 24px;
+                                          text-decoration:none;border-radius:4px;
+                                          font-weight:bold;display:inline-block;">
+                                    Open Job File →
+                                </a>
+                            </div>
+                        </div>
+                        """,
+                        now=False,
+                    )
+                    frappe.logger().info(
+                        f"[Job Assignment] {self.name} → {self.transit_officer}")
+                except Exception as e:
+                    frappe.log_error(str(e), "Job Assignment Notification")
+
+        # ── Customs agent assignment notification ────────────────────
         if not self.customs_agent:
             return
 
-        # Check if customs_agent was just set
-        old_doc = self.get_doc_before_save()
-        if old_doc and old_doc.customs_agent == self.customs_agent:
+        old_customs = old_doc.customs_agent if old_doc else None
+        if self.customs_agent == old_customs:
             return  # No change
 
         # Customs agent just assigned — notify them

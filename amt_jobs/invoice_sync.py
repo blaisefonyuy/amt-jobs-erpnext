@@ -93,9 +93,10 @@ def sync_invoices():
                 h.[Bill-to Address 2]            AS client_address2,
                 h.[Bill-to City]                 AS client_city,
                 h.[VAT Registration No_]         AS client_vat_no,
-                c.[VAT Registration No_]         AS client_niu,
-                c.[Registration No_]             AS client_rccm,
+                c.[GLN]                          AS client_niu,
+                c.[Address]                      AS client_rccm,
                 c.[Trade Register]               AS vat_exempt_ref,
+                c.[Payment Bank]                 AS client_bank_code,
                 h.[Posting Description]          AS comments,
                 h.[User ID]                      AS issued_by,
                 h.[Payment Terms Code]           AS payment_terms,
@@ -116,7 +117,7 @@ def sync_invoices():
                 h.[_ Witholding tax], h.[_ Training tax], h.[Amount Training Tax],
                 h.[Bill-to Name 2], h.[Bill-to Address], h.[Bill-to Address 2],
                 h.[Bill-to City], h.[VAT Registration No_],
-                c.[VAT Registration No_], c.[Registration No_], c.[Trade Register],
+                c.[GLN], c.[Address], c.[Trade Register], c.[Payment Bank],
                 h.[Posting Description], h.[User ID],
                 h.[Payment Terms Code], h.[Due Date]
             ORDER BY h.[Posting Date] DESC
@@ -225,6 +226,8 @@ def sync_invoices():
             doc.client_niu          = (d.get('client_niu') or '').strip()
             doc.client_rccm         = (d.get('client_rccm') or '').strip()
             doc.vat_exempt_ref      = (d.get('vat_exempt_ref') or '').strip()
+            # Bank code from customer master — used for dynamic bank lookup
+            client_bank_code = (d.get('client_bank_code') or '').strip()
             doc.client_address      = (d.get('client_address') or '').strip()
             doc.client_address2     = (d.get('client_address2') or '').strip()
             doc.client_city         = (d.get('client_city') or '').strip()
