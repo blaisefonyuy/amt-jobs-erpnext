@@ -93,6 +93,9 @@ def sync_invoices():
                 h.[Bill-to Address 2]            AS client_address2,
                 h.[Bill-to City]                 AS client_city,
                 h.[VAT Registration No_]         AS client_vat_no,
+                c.[VAT Registration No_]         AS client_niu,
+                c.[Registration No_]             AS client_rccm,
+                c.[Trade Register]               AS vat_exempt_ref,
                 h.[Posting Description]          AS comments,
                 h.[User ID]                      AS issued_by,
                 h.[Payment Terms Code]           AS payment_terms,
@@ -103,6 +106,8 @@ def sync_invoices():
             FROM [AMT_CM$Sales Invoice Header] h
             JOIN [AMT_CM$Sales Invoice Line] l
                 ON l.[Document No_] = h.[No_]
+            LEFT JOIN [AMT_CM$Customer] c
+                ON c.[No_] = h.[Bill-to Customer No_]
             WHERE h.[Posting Date] >= DATEADD(day, -90, GETDATE())
             GROUP BY
                 h.[No_], h.[Bill-to Customer No_], h.[Bill-to Name],
@@ -111,6 +116,7 @@ def sync_invoices():
                 h.[_ Witholding tax], h.[_ Training tax], h.[Amount Training Tax],
                 h.[Bill-to Name 2], h.[Bill-to Address], h.[Bill-to Address 2],
                 h.[Bill-to City], h.[VAT Registration No_],
+                c.[VAT Registration No_], c.[Registration No_], c.[Trade Register],
                 h.[Posting Description], h.[User ID],
                 h.[Payment Terms Code], h.[Due Date]
             ORDER BY h.[Posting Date] DESC
@@ -216,6 +222,9 @@ def sync_invoices():
             doc.client_code         = client_code
             doc.client_name         = (d['client_name'] or '').strip()
             doc.client_name2        = (d.get('client_name2') or '').strip()
+            doc.client_niu          = (d.get('client_niu') or '').strip()
+            doc.client_rccm         = (d.get('client_rccm') or '').strip()
+            doc.vat_exempt_ref      = (d.get('vat_exempt_ref') or '').strip()
             doc.client_address      = (d.get('client_address') or '').strip()
             doc.client_address2     = (d.get('client_address2') or '').strip()
             doc.client_city         = (d.get('client_city') or '').strip()

@@ -41,7 +41,11 @@
   "issued_by",
   "bl_number",
   "payment_terms",
-  "due_date"
+  "due_date",
+  "client_niu",
+  "client_rccm",
+  "vat_exempt",
+  "vat_exempt_ref"
  ],
  "fields": [
   {
@@ -266,12 +270,36 @@
    "fieldtype": "Date",
    "label": "Due Date",
    "read_only": 1
+  },
+  {
+   "fieldname": "client_niu",
+   "fieldtype": "Data",
+   "label": "Client NIU",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_rccm",
+   "fieldtype": "Data",
+   "label": "Client RCCM",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_exempt",
+   "fieldtype": "Check",
+   "label": "Exon\u00e9r\u00e9 TVA",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_exempt_ref",
+   "fieldtype": "Data",
+   "label": "R\u00e9f. Attestation Exon\u00e9ration",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-14 09:35:41.856810",
+ "modified": "2026-07-16 17:44:39.449718",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Sales Invoice",
