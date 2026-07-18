@@ -209,6 +209,48 @@ def process_finance_request(docname, request_no, action, notes=None, amount_rele
     elif action == 'reject':
         req.status   = 'Rejected'
         req.sb_notes = notes or ''
+
+        # Notify the transit agent about rejection
+        try:
+            agent = doc.transit_officer
+            if agent:
+                frappe.sendmail(
+                    recipients=[agent],
+                    subject=f"❌ Finance Request #{request_no} Rejected — {docname}",
+                    message=f"""
+                    <div style="font-family:Arial,sans-serif;max-width:640px;">
+                        <div style="background:#C00000;padding:14px 20px;border-radius:6px 6px 0 0;">
+                            <h2 style="color:#fff;margin:0;">❌ Finance Request Rejected</h2>
+                            <p style="color:#fff;opacity:.9;margin:4px 0 0;">{docname}</p>
+                        </div>
+                        <div style="border:1px solid #dde3ee;padding:20px;border-radius:0 0 6px 6px;">
+                            <p>Finance Request <b>#{request_no}</b> for <b>{doc.name}</b>
+                            has been rejected.</p>
+                            <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                                <tr style="background:#f5f6fa;">
+                                    <td style="padding:8px 12px;font-weight:600;">Amount:</td>
+                                    <td style="padding:8px 12px;">{req.amount:,.0f} XAF</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 12px;font-weight:600;">Reason:</td>
+                                    <td style="padding:8px 12px;color:#C00000;">{notes or "No reason provided"}</td>
+                                </tr>
+                            </table>
+                            <br/>
+                            <p>Please review and resubmit if necessary.</p>
+                            <a href="https://portal.amtcm-sa.com/app/amt-job-file/{docname}"
+                               style="background:#1F3864;color:#fff;padding:12px 24px;
+                                      text-decoration:none;border-radius:4px;
+                                      font-weight:bold;display:inline-block;">
+                                Open Job File →
+                            </a>
+                        </div>
+                    </div>
+                    """,
+                    now=False,
+                )
+        except Exception as e:
+            frappe.log_error(str(e), "Rejection Notification")
     
     doc.flags.ignore_permissions = True
     doc.flags.ignore_validate    = True
