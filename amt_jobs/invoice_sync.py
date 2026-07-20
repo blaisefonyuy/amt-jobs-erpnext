@@ -14,6 +14,7 @@ import re as _re
 WHT_RATES = {
     'EXO-WHT2.2': 2.2, 'EXO-WHT5.5': 5.5,
     'WHT 2.2%':   2.2, 'WHT 5.5%':   5.5,
+    'WHT 2.2/19': 2.2,
     'WHT2.2':     2.2, 'WHT5.5':     5.5,
     'EXONERE':    0.0, 'ETRANGER':   0.0,
     'INTERCO':    0.0, 'LOCAL':      0.0,
@@ -225,7 +226,9 @@ def sync_invoices():
             doc.client_name2        = (d.get('client_name2') or '').strip()
             doc.client_niu          = (d.get('client_niu') or '').strip()
             doc.client_rccm         = (d.get('client_rccm') or '').strip()
-            doc.vat_exempt_ref      = (d.get('vat_exempt_ref') or '').strip()
+            # vat_exempt_ref: first check AMT Client Config, then Navision Trade Register
+            client_cfg_ref = frappe.db.get_value('AMT Client Config', client_code, 'vat_exempt_ref')
+            doc.vat_exempt_ref = client_cfg_ref or (d.get('vat_exempt_ref') or '').strip()
             # Bank code from customer master — used for dynamic bank lookup
             client_bank_code = (d.get('client_bank_code') or '').strip()
             doc.client_address      = (d.get('client_address') or '').strip()
