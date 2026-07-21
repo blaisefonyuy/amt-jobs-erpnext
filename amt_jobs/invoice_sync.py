@@ -1,50 +1,123 @@
-# AMT Sales Invoice Sync — Navision → ERPNext
-# Reads posted invoices from Navision, calculates NET À PAYER
-# and stores in AMT Sales Invoice DocType
+# AMT Sales Invoice Sync — Incremental Engine
+# Reads ONLY new/modified invoices from Navision since last sync
+# Stores sync state in ERPNext Singles table
+# Supports manual trigger with lock mechanism
 
 import frappe
-from frappe.utils import now_datetime, today
+from frappe.utils import now_datetime, get_datetime
 from amt_jobs.navision_sync import get_connection
-
-# WHT rates by WHT Business Posting Group
-# EXO-WHT2.2 = clients who withhold AIB at 2.2% (habilitated entities)
-# Add more groups as Navision is configured
 import re as _re
 
+SYNC_LOCK_KEY   = 'amt_invoice_sync_lock'
+SYNC_TS_KEY     = 'amt_invoice_sync_last_ts'
+SYNC_LOCK_TTL   = 600  # 10 minutes max lock time
+
+# ── WHT Rate lookup ──────────────────────────────────────────────────────────
 WHT_RATES = {
     'EXO-WHT2.2': 2.2, 'EXO-WHT5.5': 5.5,
     'WHT 2.2%':   2.2, 'WHT 5.5%':   5.5,
-    'WHT 2.2/19': 2.2,
     'WHT2.2':     2.2, 'WHT5.5':     5.5,
+    'WHT 2.2/19': 2.2,
     'EXONERE':    0.0, 'ETRANGER':   0.0,
     'INTERCO':    0.0, 'LOCAL':      0.0,
     '':           0.0,
 }
 
 def get_wht_rate(group):
-    """Get WHT rate from group name dynamically — handles any naming convention"""
+    """Get AIR rate from WHT Business Posting Group name"""
     if not group:
         return 0.0
     group = group.strip()
     if group in WHT_RATES:
         return WHT_RATES[group]
-    # Extract numeric rate from group name e.g. 'WHT 5.5%' -> 5.5
-    match = _re.search(r'(\d+\.?\d*)\s*%?$', group)
-    if match:
-        return float(match.group(1))
+    # Dual group e.g. 'WHT 2.2/19' — take FIRST number as AIR rate
+    dual = _re.match(r'WHT\s+(\d+\.?\d*)\s*/\s*(\d+)', group)
+    if dual:
+        return float(dual.group(1))
+    # Single rate e.g. 'WHT 5.5%'
+    single = _re.search(r'(\d+\.?\d*)\s*%', group)
+    if single:
+        return float(single.group(1))
     return 0.0
 
+# ── Sync state helpers ───────────────────────────────────────────────────────
+def get_last_sync_ts():
+    """Get last successful sync timestamp"""
+    val = frappe.cache().get_value(SYNC_TS_KEY)
+    if val:
+        return str(val)
+    # Fallback to DB
+    val = frappe.db.get_single_value('System Settings', 'setup_complete')
+    ts = frappe.db.sql("""
+        SELECT MAX(synced_at) FROM `tabAMT Sales Invoice`
+    """)
+    if ts and ts[0][0]:
+        return str(ts[0][0])
+    return None
+
+def set_last_sync_ts(ts):
+    """Store last sync timestamp"""
+    frappe.cache().set_value(SYNC_TS_KEY, str(ts))
+    # Also persist to DB via Single DocType workaround
+    frappe.db.sql("""
+        UPDATE `tabAMT Sales Invoice`
+        SET synced_at = %s
+        WHERE name = (SELECT name FROM (
+            SELECT name FROM `tabAMT Sales Invoice`
+            ORDER BY posting_date DESC LIMIT 1
+        ) t)
+    """, (ts,))
+
+def acquire_lock():
+    """Try to acquire sync lock. Returns True if acquired."""
+    existing = frappe.cache().get_value(SYNC_LOCK_KEY)
+    if existing:
+        # Check if lock is stale (older than TTL)
+        try:
+            lock_time = get_datetime(str(existing))
+            age = (now_datetime() - lock_time).total_seconds()
+            if age < SYNC_LOCK_TTL:
+                frappe.logger().info(f"[Invoice Sync] Lock active, age={age:.0f}s — skipping")
+                return False
+            else:
+                frappe.logger().info(f"[Invoice Sync] Stale lock detected ({age:.0f}s) — forcing release")
+        except:
+            pass
+    frappe.cache().set_value(SYNC_LOCK_KEY, str(now_datetime()))
+    return True
+
+def release_lock():
+    """Release sync lock"""
+    frappe.cache().delete_value(SYNC_LOCK_KEY)
+
+def is_locked():
+    """Check if sync is currently running"""
+    val = frappe.cache().get_value(SYNC_LOCK_KEY)
+    if not val:
+        return False, None
+    try:
+        lock_time = get_datetime(str(val))
+        age = (now_datetime() - lock_time).total_seconds()
+        if age >= SYNC_LOCK_TTL:
+            release_lock()
+            return False, None
+        return True, lock_time
+    except:
+        return False, None
+
+# ── WHT Clients ──────────────────────────────────────────────────────────────
 def get_wht_clients(conn):
-    """Get all clients with WHT applicable from Navision"""
+    """Get all WHT clients from Navision"""
     cur = conn.cursor()
     cur.execute("""
         SELECT
-            [No_],
-            [Name],
-            [Withholding Tax Applies],
-            [_ Witholding tax],
-            [WHT Business Posting Group],
-            [_ Training tax]
+            [No_]                      AS client_code,
+            [Withholding Tax Applies]  AS wht_applies,
+            [WHT Business Posting Group] AS wht_group,
+            [_ Training tax]           AS training_tax,
+            [Payment Bank]             AS bank_code,
+            [GLN]                      AS client_niu,
+            [Address]                  AS client_rccm
         FROM [AMT_CM$Customer]
         WHERE [Withholding Tax Applies] = 1
     """)
@@ -53,34 +126,53 @@ def get_wht_clients(conn):
     clients = {}
     for r in rows:
         d = dict(zip(cols, r))
-        clients[d['No_']] = {
+        clients[d['client_code']] = {
             'wht_applies':   True,
-            'wht_group':     (d['WHT Business Posting Group'] or '').strip(),
-            'training_tax':  bool(d['_ Training tax']),
+            'wht_group':     (d['wht_group'] or '').strip(),
+            'training_tax':  bool(d['training_tax']),
+            'bank_code':     (d['bank_code'] or '').strip(),
+            'client_niu':    (d['client_niu'] or '').strip(),
+            'client_rccm':   (d['client_rccm'] or '').strip(),
         }
     return clients
 
-def sync_invoices():
-    """Main sync function — pull last 90 days of invoices from Navision"""
-    frappe.set_user('Administrator')
-
+# ── Core sync function ───────────────────────────────────────────────────────
+def _do_sync(since_ts=None, full=False):
+    """
+    Core sync logic.
+    since_ts: only fetch invoices posted >= this datetime (incremental)
+    full: if True, ignore since_ts and sync last 90 days
+    """
     try:
         conn = get_connection()
     except Exception as e:
-        frappe.log_error(str(e), "Invoice Sync — Connection Failed")
-        return "Connection failed"
+        frappe.log_error(str(e)[:200], "Sync Connect Error")
+        return 0, 0, str(e)
 
     try:
-        # Get WHT clients
         wht_clients = get_wht_clients(conn)
-        frappe.logger().info(f"[Invoice Sync] WHT clients: {list(wht_clients.keys())}")
+        cur  = conn.cursor()
+        cur2 = get_connection().cursor()  # separate connection for lines
 
-        cur = conn.cursor()
-        cur.execute("""
+        # Build WHERE clause
+        if full or not since_ts:
+            where_clause = "h.[Posting Date] >= DATEADD(day, -90, GETDATE())"
+            frappe.logger().info("[Invoice Sync] FULL sync — last 90 days")
+        else:
+            ts_str = str(since_ts)[:19].replace("T", " ")
+            where_clause = f"h.[Posting Date] >= '{ts_str}'"
+            frappe.logger().info(f"[Invoice Sync] INCREMENTAL sync since {since_ts}")
+
+        cur.execute(f"""
             SELECT
                 h.[No_]                          AS invoice_no,
                 h.[Bill-to Customer No_]         AS client_code,
                 h.[Bill-to Name]                 AS client_name,
+                h.[Bill-to Name 2]               AS client_name2,
+                h.[Bill-to Address]              AS client_address,
+                h.[Bill-to Address 2]            AS client_address2,
+                h.[Bill-to City]                 AS client_city,
+                h.[VAT Registration No_]         AS client_vat_no,
                 h.[Posting Date]                 AS posting_date,
                 h.[Job No]                       AS job_no,
                 h.[Currency Code]                AS currency,
@@ -89,45 +181,39 @@ def sync_invoices():
                 h.[_ Witholding tax]             AS nav_wht_flag,
                 h.[_ Training tax]               AS nav_training_flag,
                 h.[Amount Training Tax]          AS nav_training_amount,
-                h.[Bill-to Name 2]               AS client_name2,
-                h.[Bill-to Address]              AS client_address,
-                h.[Bill-to Address 2]            AS client_address2,
-                h.[Bill-to City]                 AS client_city,
-                h.[VAT Registration No_]         AS client_vat_no,
-                c.[GLN]                          AS client_niu,
-                c.[Address]                      AS client_rccm,
-                c.[Trade Register]               AS vat_exempt_ref,
-                c.[Payment Bank]                 AS client_bank_code,
-                h.[Posting Description]          AS comments,
-                h.[User ID]                      AS issued_by,
                 h.[Payment Terms Code]           AS payment_terms,
                 h.[Due Date]                     AS due_date,
+                h.[User ID]                      AS issued_by,
                 SUM(l.[Amount])                  AS amount_ht,
-                SUM(l.[Amount Including VAT])    AS amount_ttc,
-                SUM(l.[VAT Base Amount])         AS vat_base
+                SUM(l.[Amount Including VAT])    AS amount_ttc
             FROM [AMT_CM$Sales Invoice Header] h
-            JOIN [AMT_CM$Sales Invoice Line] l
-                ON l.[Document No_] = h.[No_]
-            LEFT JOIN [AMT_CM$Customer] c
-                ON c.[No_] = h.[Bill-to Customer No_]
-            WHERE h.[Posting Date] >= DATEADD(day, -90, GETDATE())
+            JOIN [AMT_CM$Sales Invoice Line] l ON l.[Document No_] = h.[No_]
+            WHERE {where_clause}
             GROUP BY
                 h.[No_], h.[Bill-to Customer No_], h.[Bill-to Name],
+                h.[Bill-to Name 2], h.[Bill-to Address], h.[Bill-to Address 2],
+                h.[Bill-to City], h.[VAT Registration No_],
                 h.[Posting Date], h.[Job No], h.[Currency Code],
                 h.[Amount Witholding Tax], h.[Total of Line Amount incl_VAT],
                 h.[_ Witholding tax], h.[_ Training tax], h.[Amount Training Tax],
-                h.[Bill-to Name 2], h.[Bill-to Address], h.[Bill-to Address 2],
-                h.[Bill-to City], h.[VAT Registration No_],
-                c.[GLN], c.[Address], c.[Trade Register], c.[Payment Bank],
-                h.[Posting Description], h.[User ID],
-                h.[Payment Terms Code], h.[Due Date]
+                h.[Payment Terms Code], h.[Due Date], h.[User ID]
             ORDER BY h.[Posting Date] DESC
         """)
-        
-        # Also get line items — use separate connection
-        conn2 = get_connection()
-        cur2 = conn2.cursor()
-        cur2.execute("""
+        rows = cur.fetchall()
+        cols = [desc[0] for desc in cur.description]
+
+        if not rows:
+            conn.close()
+            return 0, 0, None
+
+        # Fetch all lines for these invoices
+        invoice_nos = tuple(r[0] for r in rows)
+        if len(invoice_nos) == 1:
+            in_clause = f"('{invoice_nos[0]}')"
+        else:
+            in_clause = str(invoice_nos)
+
+        cur2.execute(f"""
             SELECT
                 l.[Document No_]          AS invoice_no,
                 l.[Line No_]              AS line_no,
@@ -139,33 +225,28 @@ def sync_invoices():
                 l.[Amount]                AS amount,
                 l.[Amount Including VAT]  AS amount_ttc,
                 l.[Unit of Measure Code]  AS uom,
-                l.[Outlay Category]       AS outlay_category,
                 l.[WHT Product Posting Group] AS wht_prod_group,
-                l.[Gen_ Prod_ Posting Group]  AS gen_prod_group,
                 l.[Bold]                  AS is_bold,
                 l.[End Text]              AS end_text,
                 l.[Sub Total (Report)]    AS is_subtotal
             FROM [AMT_CM$Sales Invoice Line] l
-            JOIN [AMT_CM$Sales Invoice Header] h ON h.[No_] = l.[Document No_]
-            WHERE h.[Posting Date] >= DATEADD(day, -90, GETDATE())
+            WHERE l.[Document No_] IN {in_clause}
             ORDER BY l.[Document No_], l.[Line No_]
         """)
         line_rows = cur2.fetchall()
         line_cols = [desc[0] for desc in cur2.description]
-        
-        # Group lines by invoice
+
         from collections import defaultdict
         invoice_lines = defaultdict(list)
         for lr in line_rows:
             ld = dict(zip(line_cols, lr))
             invoice_lines[ld['invoice_no']].append(ld)
-        conn2.close()
-        rows = cur.fetchall()
-        cols = [desc[0] for desc in cur.description]
+
         conn.close()
 
         synced = 0
         updated = 0
+        sync_time = now_datetime()
 
         for r in rows:
             d = dict(zip(cols, r))
@@ -174,153 +255,245 @@ def sync_invoices():
             if not invoice_no:
                 continue
 
-            # Amounts
-            ht  = float(d['amount_ht']  or 0)
-            ttc = float(d['amount_ttc'] or 0)
-            tva = ttc - ht
+            try:
+                ht  = float(d['amount_ht']  or 0)
+                ttc = float(d['amount_ttc'] or 0)
+                tva = ttc - ht
 
-            # WHT calculation
-            nav_wht   = float(d['nav_wht_amount'] or 0)
-            wht_applies = False
-            wht_rate    = 0.0
-            wht_amount  = 0.0
-            wht_source  = 'None'
-            training_tax        = False
-            training_tax_amount = 0.0
+                # WHT calculation
+                nav_wht     = float(d['nav_wht_amount'] or 0)
+                wht_applies = False
+                wht_rate    = 0.0
+                wht_amount  = 0.0
+                wht_source  = 'None'
+                training_tax        = False
+                training_tax_amount = 0.0
 
-            # Check if client has WHT
-            client_wht = wht_clients.get(client_code, {})
-            if client_wht.get('wht_applies'):
-                wht_applies = True
-                wht_group   = client_wht.get('wht_group', '')
-                wht_rate    = get_wht_rate(wht_group)
-                training_tax = client_wht.get('training_tax', False)
+                client_wht = wht_clients.get(client_code, {})
+                if client_wht.get('wht_applies'):
+                    wht_applies = True
+                    wht_group   = client_wht.get('wht_group', '')
+                    wht_rate    = get_wht_rate(wht_group)
+                    training_tax = client_wht.get('training_tax', False)
+                    training_tax_amount = float(d['nav_training_amount'] or 0)
 
-                # WHT base = SERVICES only (not pass-through outlays)
-                # We'll calculate from line items after sync
-                # For now use nav_wht if available, else calculate on HT
-                if nav_wht > 0:
-                    wht_amount = nav_wht
-                    wht_source = 'Navision'
-                elif wht_rate > 0:
-                    # Will be recalculated after lines are loaded
-                    wht_amount = round(ht * wht_rate / 100, 0)
-                    wht_source = f'Calculated ({wht_rate}%)'
+                    if nav_wht > 0:
+                        wht_amount = nav_wht
+                        wht_source = 'Navision'
+                    elif wht_rate > 0:
+                        wht_amount = 0.0
+                        wht_source = f'Calculated ({wht_rate}%) on services'
+                    else:
+                        wht_source = 'None'
+
+                # Process lines
+                doc_lines = []
+                service_total_for_wht = 0.0
+
+                for line in invoice_lines.get(invoice_no, []):
+                    desc = (line['description'] or '').strip()
+                    if not desc and not float(line['amount'] or 0):
+                        continue
+                    line_amount = float(line['amount'] or 0)
+                    wht_grp = (line.get('wht_prod_group') or '').strip()
+
+                    if line['is_subtotal']:
+                        line_type = 'Subtotal'
+                    elif line['end_text']:
+                        line_type = 'Text'
+                    elif wht_grp == 'WHT_0':
+                        line_type = 'Outlay'
+                    elif wht_grp:
+                        line_type = 'Service'
+                        service_total_for_wht += line_amount
+                    else:
+                        line_type = 'Outlay'
+
+                    doc_lines.append({
+                        'line_no':      int(line['line_no'] or 0),
+                        'description':  desc,
+                        'description2': (line['description2'] or '').strip(),
+                        'quantity':     float(line['quantity'] or 0),
+                        'unit_price':   float(line['unit_price'] or 0),
+                        'vat_pct':      float(line['vat_pct'] or 0),
+                        'amount':       line_amount,
+                        'amount_ttc':   float(line['amount_ttc'] or 0),
+                        'uom':          (line['uom'] or '').strip(),
+                        'line_type':    line_type,
+                        'is_bold':      int(line['is_bold'] or 0),
+                    })
+
+                # Recalculate WHT on services only
+                if wht_applies and wht_rate > 0 and service_total_for_wht > 0 and nav_wht == 0:
+                    wht_amount = round(service_total_for_wht * wht_rate / 100, 0)
+
+                net_a_payer = ttc - wht_amount - training_tax_amount
+
+                # Client config
+                client_cfg_ref = frappe.db.get_value('AMT Client Config', client_code, 'vat_exempt_ref')
+
+                # Upsert
+                exists = frappe.db.exists('AMT Sales Invoice', invoice_no)
+                if exists:
+                    doc = frappe.get_doc('AMT Sales Invoice', invoice_no)
                 else:
-                    wht_source = 'None'
+                    doc = frappe.new_doc('AMT Sales Invoice')
+                    doc.invoice_no = invoice_no
 
-                training_tax_amount = float(d['nav_training_amount'] or 0)
+                doc.client_code         = client_code
+                doc.client_name         = (d['client_name'] or '').strip()
+                doc.client_name2        = (d.get('client_name2') or '').strip()
+                doc.client_address      = (d.get('client_address') or '').strip()
+                doc.client_address2     = (d.get('client_address2') or '').strip()
+                doc.client_city         = (d.get('client_city') or '').strip()
+                doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
+                doc.client_niu          = client_wht.get('client_niu', '')
+                doc.client_rccm         = client_wht.get('client_rccm', '')
+                doc.client_bank_code    = client_wht.get('bank_code', '')
+                doc.vat_exempt_ref      = client_cfg_ref or ''
+                doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
+                doc.payment_terms       = (d.get('payment_terms') or '').strip()
+                doc.due_date            = d.get('due_date')
+                doc.posting_date        = d['posting_date']
+                doc.job_no              = (d.get('job_no') or '').strip()
+                doc.currency            = (d.get('currency') or 'XAF').strip() or 'XAF'
+                doc.amount_ht           = ht
+                doc.amount_tva          = tva
+                doc.amount_ttc          = ttc
+                doc.wht_applies         = wht_applies
+                doc.wht_rate            = wht_rate
+                doc.wht_amount          = wht_amount
+                doc.training_tax        = training_tax
+                doc.training_tax_amount = training_tax_amount
+                doc.net_a_payer         = net_a_payer
+                doc.nav_wht_amount      = nav_wht
+                doc.wht_source          = wht_source
+                doc.synced_at           = sync_time
 
-            net_a_payer = ttc - wht_amount - training_tax_amount
+                # Lines
+                doc.lines = []
+                for line_data in doc_lines:
+                    doc.append('lines', line_data)
 
-            # Upsert
-            exists = frappe.db.exists('AMT Sales Invoice', invoice_no)
-            if exists:
-                doc = frappe.get_doc('AMT Sales Invoice', invoice_no)
-            else:
-                doc = frappe.new_doc('AMT Sales Invoice')
-                doc.invoice_no = invoice_no
+                doc.flags.ignore_permissions = True
+                doc.flags.ignore_mandatory   = True
 
-            doc.client_code         = client_code
-            doc.client_name         = (d['client_name'] or '').strip()
-            doc.client_name2        = (d.get('client_name2') or '').strip()
-            doc.client_niu          = (d.get('client_niu') or '').strip()
-            doc.client_rccm         = (d.get('client_rccm') or '').strip()
-            # vat_exempt_ref: first check AMT Client Config, then Navision Trade Register
-            client_cfg_ref = frappe.db.get_value('AMT Client Config', client_code, 'vat_exempt_ref')
-            doc.vat_exempt_ref = client_cfg_ref or (d.get('vat_exempt_ref') or '').strip()
-            # Bank code from customer master — used for dynamic bank lookup
-            client_bank_code = (d.get('client_bank_code') or '').strip()
-            doc.client_address      = (d.get('client_address') or '').strip()
-            doc.client_address2     = (d.get('client_address2') or '').strip()
-            doc.client_city         = (d.get('client_city') or '').strip()
-            doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
-            # Don't auto-populate comments from Navision Posting Description
-            # Agent fills this manually with cargo description
-            if not frappe.db.get_value('AMT Sales Invoice', invoice_no, 'comments'):
-                doc.comments = ''  # Leave blank for agent to fill
-            doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
-            doc.payment_terms       = (d.get('payment_terms') or '').strip()
-            doc.due_date            = d.get('due_date')
-            doc.posting_date        = d['posting_date']
-            doc.job_no              = (d['job_no'] or '').strip()
-            doc.currency            = (d['currency'] or 'XAF').strip() or 'XAF'
-            doc.amount_ht           = ht
-            doc.amount_tva          = tva
-            doc.amount_ttc          = ttc
-            doc.wht_applies         = wht_applies
-            doc.wht_rate            = wht_rate
-            doc.wht_amount          = wht_amount
-            doc.training_tax        = training_tax
-            doc.training_tax_amount = training_tax_amount
-            doc.net_a_payer         = net_a_payer
-            doc.nav_wht_amount      = nav_wht
-            doc.wht_source          = wht_source
-            doc.synced_at           = now_datetime()
-
-            # Sync line items
-            doc.lines = []
-            service_total_for_wht = 0.0
-            for line in invoice_lines.get(invoice_no, []):
-                desc = (line['description'] or '').strip()
-                if not desc and not float(line['amount'] or 0):
-                    continue
-                line_amount = float(line['amount'] or 0)
-                wht_grp = (line.get('wht_prod_group') or '').strip()
-                # Use WHT Product Posting Group to classify lines
-                if line['is_subtotal']:
-                    line_type = 'Subtotal'
-                elif line['end_text']:
-                    line_type = 'Text'
-                elif wht_grp == 'WHT_0':
-                    line_type = 'Outlay'  # Pure pass-through — no WHT
-                elif wht_grp:
-                    line_type = 'Service'  # AMT service — WHT applies
+                if exists:
+                    doc.save()
+                    updated += 1
                 else:
-                    line_type = 'Outlay'  # Default to outlay if unknown
+                    doc.insert()
+                    synced += 1
 
-                # Accumulate WHT base (services only)
-                if wht_grp and wht_grp != 'WHT_0':
-                    service_total_for_wht += line_amount
+                if (synced + updated) % 50 == 0:
+                    frappe.db.commit()
 
-                doc.append('lines', {
-                    'line_no':      int(line['line_no'] or 0),
-                    'description':  desc,
-                    'description2': (line['description2'] or '').strip(),
-                    'quantity':     float(line['quantity'] or 0),
-                    'unit_price':   float(line['unit_price'] or 0),
-                    'vat_pct':      float(line['vat_pct'] or 0),
-                    'amount':       line_amount,
-                    'amount_ttc':   float(line['amount_ttc'] or 0),
-                    'uom':          (line['uom'] or '').strip(),
-                    'line_type':    line_type,
-                    'is_bold':      int(line['is_bold'] or 0),
-                })
-
-            # Recalculate WHT on SERVICES only (not outlays)
-            if wht_applies and wht_rate > 0 and service_total_for_wht > 0 and nav_wht == 0:
-                doc.wht_amount  = round(service_total_for_wht * wht_rate / 100, 0)
-                doc.net_a_payer = ttc - doc.wht_amount - training_tax_amount
-                doc.wht_source  = f'Calculated ({wht_rate}%) on services'
-
-            doc.flags.ignore_permissions = True
-            doc.flags.ignore_mandatory   = True
-
-            if exists:
-                doc.save()
-                updated += 1
-            else:
-                doc.insert()
-                synced += 1
-
-            if (synced + updated) % 100 == 0:
-                frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(f"{invoice_no}: {str(e)}", "Invoice Sync — Record Error")
+                continue
 
         frappe.db.commit()
+        return synced, updated, None
+
+    except Exception as e:
+        frappe.log_error(str(e)[:200], "Sync Error")
+        return 0, 0, str(e)[:200]
+
+
+# ── Public API ───────────────────────────────────────────────────────────────
+def sync_invoices():
+    """Scheduled sync — incremental, skips if locked"""
+    frappe.set_user('Administrator')
+
+    locked, lock_time = is_locked()
+    if locked:
+        return f"Sync already running since {lock_time}"
+
+    if not acquire_lock():
+        return "Could not acquire lock"
+
+    try:
+        last_ts = get_last_sync_ts()
+        synced, updated, error = _do_sync(since_ts=last_ts)
+
+        if error:
+            return f"Error: {error}"
+
+        set_last_sync_ts(now_datetime())
         msg = f"Invoice Sync complete — {synced} new, {updated} updated"
         frappe.logger().info(f"[Invoice Sync] {msg}")
         return msg
 
-    except Exception as e:
-        frappe.log_error(str(e), "Invoice Sync Error")
-        return f"Error: {str(e)}"
+    finally:
+        release_lock()
+
+
+@frappe.whitelist()
+def manual_sync():
+    """Manual sync triggered by user — with lock check and status response"""
+    locked, lock_time = is_locked()
+    if locked:
+        return {
+            'status': 'locked',
+            'message': f'Sync already running since {lock_time}. Please wait.',
+        }
+
+    if not acquire_lock():
+        return {'status': 'locked', 'message': 'Could not acquire sync lock.'}
+
+    try:
+        last_ts = get_last_sync_ts()
+        synced, updated, error = _do_sync(since_ts=last_ts)
+
+        if error:
+            return {'status': 'error', 'message': f'Sync error: {error}'}
+
+        set_last_sync_ts(now_datetime())
+        return {
+            'status': 'success',
+            'message': f'✅ Sync complete — {synced} new, {updated} updated',
+            'new': synced,
+            'updated': updated,
+        }
+    finally:
+        release_lock()
+
+
+@frappe.whitelist()
+def full_sync():
+    """Force full re-sync of last 90 days — admin only"""
+    if 'System Manager' not in frappe.get_roles():
+        frappe.throw("Only System Manager can run full sync")
+
+    locked, lock_time = is_locked()
+    if locked:
+        return {'status': 'locked', 'message': f'Sync running since {lock_time}'}
+
+    if not acquire_lock():
+        return {'status': 'locked', 'message': 'Could not acquire lock'}
+
+    try:
+        synced, updated, error = _do_sync(full=True)
+        if error:
+            return {'status': 'error', 'message': error}
+        set_last_sync_ts(now_datetime())
+        return {
+            'status': 'success',
+            'message': f'✅ Full sync complete — {synced} new, {updated} updated',
+        }
+    finally:
+        release_lock()
+
+
+@frappe.whitelist()
+def get_sync_status():
+    """Return current sync status for UI"""
+    locked, lock_time = is_locked()
+    last_ts = get_last_sync_ts()
+    total = frappe.db.count('AMT Sales Invoice')
+    return {
+        'locked':    locked,
+        'lock_time': str(lock_time) if lock_time else None,
+        'last_sync': str(last_ts) if last_ts else None,
+        'total':     total,
+    }
