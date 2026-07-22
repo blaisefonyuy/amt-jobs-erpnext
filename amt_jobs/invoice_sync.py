@@ -332,6 +332,24 @@ def _do_sync(since_ts=None, full=False):
                 # Client config
                 client_cfg_ref = frappe.db.get_value('AMT Client Config', client_code, 'vat_exempt_ref')
 
+                # Pull vessel/BL/ports/weight from linked Job File
+                job_no_clean = (d.get('job_no') or '').strip()
+                existing_comments = frappe.db.get_value('AMT Sales Invoice', invoice_no, 'comments') if exists else ''
+                if existing_comments:
+                    doc.comments = existing_comments
+
+                if job_no_clean and frappe.db.exists('AMT Job File', job_no_clean):
+                    jf = frappe.db.get_value('AMT Job File', job_no_clean,
+                        ['vessel_flight', 'mawb_bl', 'loading_port',
+                         'discharge_port', 'weight', 'volume'], as_dict=True)
+                    if jf:
+                        doc.vessel_flight   = jf.get('vessel_flight') or ''
+                        doc.bl_number       = jf.get('mawb_bl') or ''
+                        doc.loading_port    = jf.get('loading_port') or 'DLA'
+                        doc.discharge_port  = jf.get('discharge_port') or ''
+                        doc.taxable_weight  = float(jf.get('weight') or 0)
+                        doc.cargo_volume    = float(jf.get('volume') or 0)
+
                 # Upsert
                 exists = frappe.db.exists('AMT Sales Invoice', invoice_no)
                 if exists:

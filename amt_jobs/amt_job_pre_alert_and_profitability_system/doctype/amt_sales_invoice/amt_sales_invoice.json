@@ -46,7 +46,11 @@
   "client_rccm",
   "vat_exempt",
   "vat_exempt_ref",
-  "client_bank_code"
+  "client_bank_code",
+  "loading_port",
+  "discharge_port",
+  "taxable_weight",
+  "cargo_volume"
  ],
  "fields": [
   {
@@ -301,12 +305,36 @@
    "hidden": 1,
    "label": "Client Bank Code",
    "read_only": 1
+  },
+  {
+   "fieldname": "loading_port",
+   "fieldtype": "Data",
+   "label": "Loading Port",
+   "read_only": 1
+  },
+  {
+   "fieldname": "discharge_port",
+   "fieldtype": "Data",
+   "label": "Discharge Port",
+   "read_only": 1
+  },
+  {
+   "fieldname": "taxable_weight",
+   "fieldtype": "Float",
+   "label": "Taxable Weight",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cargo_volume",
+   "fieldtype": "Float",
+   "label": "Volume",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-20 11:54:12.137680",
+ "modified": "2026-07-21 17:14:09.112647",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Sales Invoice",

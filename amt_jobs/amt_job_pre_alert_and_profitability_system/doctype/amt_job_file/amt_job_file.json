@@ -111,7 +111,16 @@
   "total_requested",
   "total_released",
   "total_confirmed",
-  "finance_requests_html"
+  "finance_requests_html",
+  "flight_no",
+  "origin_code",
+  "dest_code",
+  "cargo_description",
+  "num_packages",
+  "gross_weight",
+  "taxable_weight",
+  "cargo_volume",
+  "container_no"
  ],
  "fields": [
   {
@@ -778,12 +787,66 @@
    "fieldname": "finance_requests_html",
    "fieldtype": "HTML",
    "label": "Finance Requests Display"
+  },
+  {
+   "fieldname": "flight_no",
+   "fieldtype": "Data",
+   "label": "Flight No.",
+   "read_only": 1
+  },
+  {
+   "fieldname": "origin_code",
+   "fieldtype": "Data",
+   "label": "Origin (Loading)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "dest_code",
+   "fieldtype": "Data",
+   "label": "Destination (Discharge)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cargo_description",
+   "fieldtype": "Data",
+   "label": "Cargo Description",
+   "read_only": 1
+  },
+  {
+   "fieldname": "num_packages",
+   "fieldtype": "Int",
+   "label": "No. of Packages",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gross_weight",
+   "fieldtype": "Float",
+   "label": "Gross Weight (KG)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "taxable_weight",
+   "fieldtype": "Float",
+   "label": "Taxable Weight",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cargo_volume",
+   "fieldtype": "Float",
+   "label": "Volume",
+   "read_only": 1
+  },
+  {
+   "fieldname": "container_no",
+   "fieldtype": "Data",
+   "label": "Container No.",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-03 16:59:30.395418",
+ "modified": "2026-07-21 17:51:35.431227",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Job File",

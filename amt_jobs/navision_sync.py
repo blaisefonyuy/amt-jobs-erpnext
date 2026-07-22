@@ -73,6 +73,9 @@ def fetch_open_jobs(conn):
         RTRIM(ISNULL(j.[MAWB],''))                    AS mawb,
         RTRIM(ISNULL(j.[HAWB],''))                    AS hawb,
         RTRIM(ISNULL(j.[BL],''))                      AS bl,
+        RTRIM(ISNULL(j.[Flight No_],''))              AS flight_no,
+        RTRIM(ISNULL(j.[Origin Code],''))             AS origin_code,
+        RTRIM(ISNULL(j.[Destination Code],''))        AS dest_code,
         RTRIM(ISNULL(j.[Dossier Agent],''))           AS dossier_agent,
         CASE WHEN j.[ATA] > '1900-01-01' THEN CONVERT(varchar(10), j.[ATA], 23) ELSE NULL END AS ata,
         CASE WHEN j.[ETA] > '1900-01-01' THEN CONVERT(varchar(10), j.[ETA], 23) ELSE NULL END AS eta_nav,
@@ -91,6 +94,109 @@ def fetch_open_jobs(conn):
     cur.execute(q)
     cols = [c[0] for c in cur.description]
     return [dict(zip(cols, row)) for row in cur.fetchall()]
+
+def bulk_fetch_marchandises(conn, job_numbers):
+    """Fetch cargo details for ALL jobs in ONE query — much faster than individual calls"""
+    if not job_numbers:
+        return {}
+    try:
+        # Build IN clause
+        placeholders = ','.join(['?' for _ in job_numbers])
+        cur = conn.cursor()
+        sql = """
+            SELECT
+                RTRIM([Job No_])                       AS job_no,
+                RTRIM(ISNULL([Description],''))        AS cargo_description,
+                ISNULL([Number of Packages], 0)        AS num_packages,
+                ISNULL([Gross Weight KG], 0)           AS gross_weight,
+                ISNULL([Taxable Weight], 0)            AS taxable_weight,
+                ISNULL([Volume], 0)                    AS cargo_volume,
+                RTRIM(ISNULL([Container No_],''))      AS container_no
+            FROM [dbo].[AMT_CM$Marchandises]
+            WHERE [Job No_] IN (""" + placeholders + ")"
+        cur.execute(sql, job_numbers)
+        rows = cur.fetchall()
+        cols = [desc[0] for desc in cur.description]
+        result = {}
+        for r in rows:
+            d = dict(zip(cols, r))
+            jno = d.pop('job_no')
+            result[jno] = {
+                'cargo_description': str(d.get('cargo_description') or '').strip(),
+                'num_packages':      int(d.get('num_packages') or 0),
+                'gross_weight':      float(d.get('gross_weight') or 0),
+                'taxable_weight':    float(d.get('taxable_weight') or 0),
+                'cargo_volume':      float(d.get('cargo_volume') or 0),
+                'container_no':      str(d.get('container_no') or '').strip(),
+            }
+        return result
+    except Exception as e:
+        import frappe
+        frappe.logger().warning(f"[Bulk Marchandises] {e}")
+        return {}
+
+def fetch_marchandises(conn, job_no):
+    """Fetch cargo details from AMT_CM$Marchandises"""
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT TOP 1
+                RTRIM(ISNULL([Description],''))       AS cargo_description,
+                ISNULL([Number of Packages], 0)       AS num_packages,
+                ISNULL([Gross Weight KG], 0)          AS gross_weight,
+                ISNULL([Taxable Weight], 0)           AS taxable_weight,
+                ISNULL([Volume], 0)                   AS cargo_volume,
+                RTRIM(ISNULL([Container No_],''))     AS container_no
+            FROM [dbo].[AMT_CM$Marchandises]
+            WHERE [Job No_] = ?
+        """, job_no)
+        row = cur.fetchone()
+        if row:
+            cols = [desc[0] for desc in cur.description]
+            d = dict(zip(cols, row))
+            # Convert Decimal to float/str
+            return {
+                'cargo_description': str(d.get('cargo_description') or '').strip(),
+                'num_packages':      int(d.get('num_packages') or 0),
+                'gross_weight':      float(d.get('gross_weight') or 0),
+                'taxable_weight':    float(d.get('taxable_weight') or 0),
+                'cargo_volume':      float(d.get('cargo_volume') or 0),
+                'container_no':      str(d.get('container_no') or '').strip(),
+            }
+    except Exception as e:
+        import frappe
+        frappe.logger().warning(f"[Marchandises] {job_no}: {e}")
+    return {}
+
+def bulk_fetch_actuals(conn, job_numbers):
+    """Fetch actuals for ALL jobs in ONE query"""
+    if not job_numbers:
+        return {}
+    try:
+        placeholders = ','.join(['?' for _ in job_numbers])
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT
+                [Job No_] AS job_no,
+                SUM(CASE WHEN [Entry Type] = 1 THEN ABS(ISNULL([Total Price (LCY)], 0)) ELSE 0 END) AS actual_revenue,
+                SUM(CASE WHEN [Entry Type] = 0 THEN ISNULL([Total Cost (LCY)], 0) ELSE 0 END) AS actual_cost,
+                COUNT(*) AS entry_count
+            FROM [dbo].[AMT_CM$Job Ledger Entry]
+            WHERE [Job No_] IN (""" + placeholders + """)
+            GROUP BY [Job No_]
+        """, job_numbers)
+        rows = cur.fetchall()
+        result = {}
+        for r in rows:
+            result[r[0]] = {
+                'actual_revenue': float(r[1] or 0),
+                'actual_cost':    float(r[2] or 0),
+                'entry_count':    r[3] or 0,
+            }
+        return result
+    except Exception as e:
+        frappe.logger().warning(f"[Bulk Actuals] {e}")
+        return {}
 
 def fetch_actuals(conn, job_no):
     q = """
@@ -139,6 +245,16 @@ def upsert_job_file(j, actuals):
     doc.vessel_flight   = j.get("vessel") or doc.vessel_flight or ""
     doc.mawb_bl         = j.get("bl") or j.get("mawb") or doc.mawb_bl or ""
     doc.hawb            = j.get("hawb") or doc.hawb or ""
+    doc.flight_no       = j.get("flight_no") or doc.get("flight_no") or ""
+    doc.origin_code     = j.get("origin_code") or doc.get("origin_code") or ""
+    doc.dest_code       = j.get("dest_code") or doc.get("dest_code") or ""
+    # Marchandises fields
+    doc.cargo_description = j.get("cargo_description") or doc.get("cargo_description") or ""
+    doc.num_packages      = j.get("num_packages") or doc.get("num_packages") or 0
+    doc.gross_weight      = j.get("gross_weight") or doc.get("gross_weight") or 0
+    doc.taxable_weight    = j.get("taxable_weight") or doc.get("taxable_weight") or 0
+    doc.cargo_volume      = j.get("cargo_volume") or doc.get("cargo_volume") or 0
+    doc.container_no      = j.get("container_no") or doc.get("container_no") or ""
 
     if j.get("ata") and not doc.arrival_date:
         doc.arrival_date = j.get("ata")
@@ -213,11 +329,21 @@ def sync_navision_dates():
     try:
         jobs = fetch_open_jobs(conn)
         created = updated = errors = 0
+
+        # Bulk fetch — single query for each dataset
+        all_job_nos = [j.get("job_number","") for j in jobs if j.get("job_number")]
+        frappe.logger().info(f"[Navision Sync] Bulk fetching actuals and marchandises for {len(all_job_nos)} jobs...")
+        actuals_map       = bulk_fetch_actuals(conn, all_job_nos)
+        marchandises_map  = bulk_fetch_marchandises(conn, all_job_nos)
+        frappe.logger().info(f"[Navision Sync] Got actuals for {len(actuals_map)}, marchandises for {len(marchandises_map)} jobs")
+
         for j in jobs:
             job_no = j.get("job_number", "")
+            # Merge bulk data into job dict
+            j.update(marchandises_map.get(job_no, {}))
             try:
                 existed = frappe.db.exists("AMT Job File", {"navision_job_ref": job_no})
-                actuals = fetch_actuals(conn, job_no)
+                actuals = actuals_map.get(job_no, {"actual_revenue": 0.0, "actual_cost": 0.0, "entry_count": 0})
                 upsert_job_file(j, actuals)
                 if existed:
                     updated += 1
