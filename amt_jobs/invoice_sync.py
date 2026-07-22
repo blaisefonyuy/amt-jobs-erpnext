@@ -1,18 +1,13 @@
 # AMT Sales Invoice Sync — Incremental Engine
-# Reads ONLY new/modified invoices from Navision since last sync
-# Stores sync state in ERPNext Singles table
-# Supports manual trigger with lock mechanism
-
 import frappe
 from frappe.utils import now_datetime, get_datetime
 from amt_jobs.navision_sync import get_connection
 import re as _re
 
-SYNC_LOCK_KEY   = 'amt_invoice_sync_lock'
-SYNC_TS_KEY     = 'amt_invoice_sync_last_ts'
-SYNC_LOCK_TTL   = 600  # 10 minutes max lock time
+SYNC_LOCK_KEY = 'amt_invoice_sync_lock'
+SYNC_TS_KEY   = 'amt_invoice_sync_last_ts'
+SYNC_LOCK_TTL = 600
 
-# ── WHT Rate lookup ──────────────────────────────────────────────────────────
 WHT_RATES = {
     'EXO-WHT2.2': 2.2, 'EXO-WHT5.5': 5.5,
     'WHT 2.2%':   2.2, 'WHT 5.5%':   5.5,
@@ -24,74 +19,48 @@ WHT_RATES = {
 }
 
 def get_wht_rate(group):
-    """Get AIR rate from WHT Business Posting Group name"""
     if not group:
         return 0.0
     group = group.strip()
     if group in WHT_RATES:
         return WHT_RATES[group]
-    # Dual group e.g. 'WHT 2.2/19' — take FIRST number as AIR rate
     dual = _re.match(r'WHT\s+(\d+\.?\d*)\s*/\s*(\d+)', group)
     if dual:
         return float(dual.group(1))
-    # Single rate e.g. 'WHT 5.5%'
     single = _re.search(r'(\d+\.?\d*)\s*%', group)
     if single:
         return float(single.group(1))
     return 0.0
 
-# ── Sync state helpers ───────────────────────────────────────────────────────
 def get_last_sync_ts():
-    """Get last successful sync timestamp"""
     val = frappe.cache().get_value(SYNC_TS_KEY)
     if val:
         return str(val)
-    # Fallback to DB
-    val = frappe.db.get_single_value('System Settings', 'setup_complete')
-    ts = frappe.db.sql("""
-        SELECT MAX(synced_at) FROM `tabAMT Sales Invoice`
-    """)
+    ts = frappe.db.sql("SELECT MAX(synced_at) FROM `tabAMT Sales Invoice`")
     if ts and ts[0][0]:
         return str(ts[0][0])
     return None
 
 def set_last_sync_ts(ts):
-    """Store last sync timestamp"""
     frappe.cache().set_value(SYNC_TS_KEY, str(ts))
-    # Also persist to DB via Single DocType workaround
-    frappe.db.sql("""
-        UPDATE `tabAMT Sales Invoice`
-        SET synced_at = %s
-        WHERE name = (SELECT name FROM (
-            SELECT name FROM `tabAMT Sales Invoice`
-            ORDER BY posting_date DESC LIMIT 1
-        ) t)
-    """, (ts,))
 
 def acquire_lock():
-    """Try to acquire sync lock. Returns True if acquired."""
     existing = frappe.cache().get_value(SYNC_LOCK_KEY)
     if existing:
-        # Check if lock is stale (older than TTL)
         try:
             lock_time = get_datetime(str(existing))
             age = (now_datetime() - lock_time).total_seconds()
             if age < SYNC_LOCK_TTL:
-                frappe.logger().info(f"[Invoice Sync] Lock active, age={age:.0f}s — skipping")
                 return False
-            else:
-                frappe.logger().info(f"[Invoice Sync] Stale lock detected ({age:.0f}s) — forcing release")
         except:
             pass
     frappe.cache().set_value(SYNC_LOCK_KEY, str(now_datetime()))
     return True
 
 def release_lock():
-    """Release sync lock"""
     frappe.cache().delete_value(SYNC_LOCK_KEY)
 
 def is_locked():
-    """Check if sync is currently running"""
     val = frappe.cache().get_value(SYNC_LOCK_KEY)
     if not val:
         return False, None
@@ -105,19 +74,11 @@ def is_locked():
     except:
         return False, None
 
-# ── WHT Clients ──────────────────────────────────────────────────────────────
 def get_wht_clients(conn):
-    """Get all WHT clients from Navision"""
     cur = conn.cursor()
     cur.execute("""
-        SELECT
-            [No_]                      AS client_code,
-            [Withholding Tax Applies]  AS wht_applies,
-            [WHT Business Posting Group] AS wht_group,
-            [_ Training tax]           AS training_tax,
-            [Payment Bank]             AS bank_code,
-            [GLN]                      AS client_niu,
-            [Address]                  AS client_rccm
+        SELECT [No_], [WHT Business Posting Group], [_ Training tax],
+               [Payment Bank], [GLN], [Address]
         FROM [AMT_CM$Customer]
         WHERE [Withholding Tax Applies] = 1
     """)
@@ -126,25 +87,20 @@ def get_wht_clients(conn):
     clients = {}
     for r in rows:
         d = dict(zip(cols, r))
-        clients[d['client_code']] = {
-            'wht_applies':   True,
-            'wht_group':     (d['wht_group'] or '').strip(),
-            'training_tax':  bool(d['training_tax']),
-            'bank_code':     (d['bank_code'] or '').strip(),
-            'client_niu':    (d['client_niu'] or '').strip(),
-            'client_rccm':   (d['client_rccm'] or '').strip(),
+        clients[d['No_']] = {
+            'wht_applies':  True,
+            'wht_group':    (d['WHT Business Posting Group'] or '').strip(),
+            'training_tax': bool(d['_ Training tax']),
+            'bank_code':    (d['Payment Bank'] or '').strip(),
+            'client_niu':   (d['GLN'] or '').strip(),
+            'client_rccm':  (d['Address'] or '').strip(),
         }
     return clients
 
-# ── Core sync function ───────────────────────────────────────────────────────
 def _do_sync(since_ts=None, full=False):
-    """
-    Core sync logic.
-    since_ts: only fetch invoices posted >= this datetime (incremental)
-    full: if True, ignore since_ts and sync last 90 days
-    """
     try:
-        conn = get_connection()
+        conn  = get_connection()
+        conn2 = get_connection()
     except Exception as e:
         frappe.log_error(str(e)[:200], "Sync Connect Error")
         return 0, 0, str(e)
@@ -152,40 +108,35 @@ def _do_sync(since_ts=None, full=False):
     try:
         wht_clients = get_wht_clients(conn)
         cur  = conn.cursor()
-        cur2 = get_connection().cursor()  # separate connection for lines
+        cur2 = conn2.cursor()
 
-        # Build WHERE clause
+        # Always sync last 2 days for incremental, 90 days for full
         if full or not since_ts:
             where_clause = "h.[Posting Date] >= DATEADD(day, -90, GETDATE())"
-            frappe.logger().info("[Invoice Sync] FULL sync — last 90 days")
         else:
-            ts_str = str(since_ts)[:19].replace("T", " ")
-            where_clause = f"h.[Posting Date] >= '{ts_str}'"
-            frappe.logger().info(f"[Invoice Sync] INCREMENTAL sync since {since_ts}")
+            where_clause = "h.[Posting Date] >= DATEADD(day, -2, GETDATE())"
 
         cur.execute(f"""
             SELECT
-                h.[No_]                          AS invoice_no,
-                h.[Bill-to Customer No_]         AS client_code,
-                h.[Bill-to Name]                 AS client_name,
-                h.[Bill-to Name 2]               AS client_name2,
-                h.[Bill-to Address]              AS client_address,
-                h.[Bill-to Address 2]            AS client_address2,
-                h.[Bill-to City]                 AS client_city,
-                h.[VAT Registration No_]         AS client_vat_no,
-                h.[Posting Date]                 AS posting_date,
-                h.[Job No]                       AS job_no,
-                h.[Currency Code]                AS currency,
-                h.[Amount Witholding Tax]        AS nav_wht_amount,
-                h.[Total of Line Amount incl_VAT] AS nav_ttc,
-                h.[_ Witholding tax]             AS nav_wht_flag,
-                h.[_ Training tax]               AS nav_training_flag,
-                h.[Amount Training Tax]          AS nav_training_amount,
-                h.[Payment Terms Code]           AS payment_terms,
-                h.[Due Date]                     AS due_date,
-                h.[User ID]                      AS issued_by,
-                SUM(l.[Amount])                  AS amount_ht,
-                SUM(l.[Amount Including VAT])    AS amount_ttc
+                h.[No_]                           AS invoice_no,
+                h.[Bill-to Customer No_]          AS client_code,
+                h.[Bill-to Name]                  AS client_name,
+                h.[Bill-to Name 2]                AS client_name2,
+                h.[Bill-to Address]               AS client_address,
+                h.[Bill-to Address 2]             AS client_address2,
+                h.[Bill-to City]                  AS client_city,
+                h.[VAT Registration No_]          AS client_vat_no,
+                h.[Posting Date]                  AS posting_date,
+                h.[Job No]                        AS job_no,
+                h.[Currency Code]                 AS currency,
+                h.[Amount Witholding Tax]         AS nav_wht_amount,
+                h.[_ Training tax]                AS nav_training_flag,
+                h.[Amount Training Tax]           AS nav_training_amount,
+                h.[Payment Terms Code]            AS payment_terms,
+                h.[Due Date]                      AS due_date,
+                h.[User ID]                       AS issued_by,
+                SUM(l.[Amount])                   AS amount_ht,
+                SUM(l.[Amount Including VAT])     AS amount_ttc
             FROM [AMT_CM$Sales Invoice Header] h
             JOIN [AMT_CM$Sales Invoice Line] l ON l.[Document No_] = h.[No_]
             WHERE {where_clause}
@@ -194,9 +145,9 @@ def _do_sync(since_ts=None, full=False):
                 h.[Bill-to Name 2], h.[Bill-to Address], h.[Bill-to Address 2],
                 h.[Bill-to City], h.[VAT Registration No_],
                 h.[Posting Date], h.[Job No], h.[Currency Code],
-                h.[Amount Witholding Tax], h.[Total of Line Amount incl_VAT],
-                h.[_ Witholding tax], h.[_ Training tax], h.[Amount Training Tax],
-                h.[Payment Terms Code], h.[Due Date], h.[User ID]
+                h.[Amount Witholding Tax], h.[_ Training tax],
+                h.[Amount Training Tax], h.[Payment Terms Code],
+                h.[Due Date], h.[User ID]
             ORDER BY h.[Posting Date] DESC
         """)
         rows = cur.fetchall()
@@ -204,31 +155,29 @@ def _do_sync(since_ts=None, full=False):
 
         if not rows:
             conn.close()
+            conn2.close()
             return 0, 0, None
 
-        # Fetch all lines for these invoices
+        # Fetch all lines in one query
         invoice_nos = tuple(r[0] for r in rows)
-        if len(invoice_nos) == 1:
-            in_clause = f"('{invoice_nos[0]}')"
-        else:
-            in_clause = str(invoice_nos)
+        in_clause = str(invoice_nos) if len(invoice_nos) > 1 else f"('{invoice_nos[0]}')"
 
         cur2.execute(f"""
             SELECT
-                l.[Document No_]          AS invoice_no,
-                l.[Line No_]              AS line_no,
-                l.[Description]           AS description,
-                l.[Description 2]         AS description2,
-                l.[Quantity]              AS quantity,
-                l.[Unit Price]            AS unit_price,
-                l.[VAT _]                 AS vat_pct,
-                l.[Amount]                AS amount,
-                l.[Amount Including VAT]  AS amount_ttc,
-                l.[Unit of Measure Code]  AS uom,
+                l.[Document No_]              AS invoice_no,
+                l.[Line No_]                  AS line_no,
+                l.[Description]               AS description,
+                l.[Description 2]             AS description2,
+                l.[Quantity]                  AS quantity,
+                l.[Unit Price]                AS unit_price,
+                l.[VAT _]                     AS vat_pct,
+                l.[Amount]                    AS amount,
+                l.[Amount Including VAT]      AS amount_ttc,
+                l.[Unit of Measure Code]      AS uom,
                 l.[WHT Product Posting Group] AS wht_prod_group,
-                l.[Bold]                  AS is_bold,
-                l.[End Text]              AS end_text,
-                l.[Sub Total (Report)]    AS is_subtotal
+                l.[Bold]                      AS is_bold,
+                l.[End Text]                  AS end_text,
+                l.[Sub Total (Report)]        AS is_subtotal
             FROM [AMT_CM$Sales Invoice Line] l
             WHERE l.[Document No_] IN {in_clause}
             ORDER BY l.[Document No_], l.[Line No_]
@@ -242,10 +191,59 @@ def _do_sync(since_ts=None, full=False):
             ld = dict(zip(line_cols, lr))
             invoice_lines[ld['invoice_no']].append(ld)
 
-        conn.close()
+        # Bulk fetch job details from Navision in one query
+        job_nos = list(set(
+            (r[cols.index('job_no')] or '').strip()
+            for r in rows if r[cols.index('job_no')]
+        ))
+        job_map = {}
+        if job_nos:
+            conn3 = get_connection()
+            cur3  = conn3.cursor()
+            try:
+                # Chunk to avoid SQL Server 2100 param limit
+                for i in range(0, len(job_nos), 500):
+                    chunk = job_nos[i:i+500]
+                    placeholders = ','.join(['?' for _ in chunk])
+                    cur3.execute("""
+                        SELECT
+                            j.[No_]                         AS job_no,
+                            RTRIM(ISNULL(j.[Vessel],''))    AS vessel,
+                            RTRIM(ISNULL(j.[BL],''))        AS bl,
+                            RTRIM(ISNULL(j.[MAWB],''))      AS mawb,
+                            RTRIM(ISNULL(j.[Origin Code],'')) AS origin_code,
+                            RTRIM(ISNULL(j.[Destination Code],'')) AS dest_code,
+                            ISNULL(m.[Gross Weight KG], 0)  AS gross_weight,
+                            ISNULL(m.[Taxable Weight], 0)   AS taxable_weight,
+                            ISNULL(m.[Volume], 0)           AS cargo_volume,
+                            RTRIM(ISNULL(m.[Description],'')) AS cargo_description
+                        FROM [AMT_CM$Job] j
+                        LEFT JOIN [AMT_CM$Marchandises] m ON m.[Job No_] = j.[No_]
+                        WHERE j.[No_] IN (""" + placeholders + ")", chunk)
+                    for jr in cur3.fetchall():
+                        jcols = [desc[0] for desc in cur3.description]
+                        jd = dict(zip(jcols, jr))
+                        job_map[jd['job_no']] = {
+                            'vessel':            str(jd.get('vessel') or '').strip(),
+                            'bl':                str(jd.get('bl') or '').strip(),
+                            'mawb':              str(jd.get('mawb') or '').strip(),
+                            'origin_code':       str(jd.get('origin_code') or '').strip(),
+                            'dest_code':         str(jd.get('dest_code') or '').strip(),
+                            'gross_weight':      float(jd.get('gross_weight') or 0),
+                            'taxable_weight':    float(jd.get('taxable_weight') or 0),
+                            'cargo_volume':      float(jd.get('cargo_volume') or 0),
+                            'cargo_description': str(jd.get('cargo_description') or '').strip(),
+                        }
+            except Exception as e:
+                frappe.logger().warning(f"[Invoice Sync] Job bulk fetch error: {e}")
+            finally:
+                conn3.close()
 
-        synced = 0
-        updated = 0
+        conn.close()
+        conn2.close()
+
+        synced    = 0
+        updated   = 0
         sync_time = now_datetime()
 
         for r in rows:
@@ -261,21 +259,20 @@ def _do_sync(since_ts=None, full=False):
                 tva = ttc - ht
 
                 # WHT calculation
-                nav_wht     = float(d['nav_wht_amount'] or 0)
-                wht_applies = False
-                wht_rate    = 0.0
-                wht_amount  = 0.0
-                wht_source  = 'None'
+                nav_wht             = float(d['nav_wht_amount'] or 0)
+                wht_applies         = False
+                wht_rate            = 0.0
+                wht_amount          = 0.0
+                wht_source          = 'None'
                 training_tax        = False
-                training_tax_amount = 0.0
+                training_tax_amount = float(d['nav_training_amount'] or 0)
 
                 client_wht = wht_clients.get(client_code, {})
                 if client_wht.get('wht_applies'):
-                    wht_applies = True
-                    wht_group   = client_wht.get('wht_group', '')
-                    wht_rate    = get_wht_rate(wht_group)
+                    wht_applies  = True
+                    wht_group    = client_wht.get('wht_group', '')
+                    wht_rate     = get_wht_rate(wht_group)
                     training_tax = client_wht.get('training_tax', False)
-                    training_tax_amount = float(d['nav_training_amount'] or 0)
 
                     if nav_wht > 0:
                         wht_amount = nav_wht
@@ -283,8 +280,6 @@ def _do_sync(since_ts=None, full=False):
                     elif wht_rate > 0:
                         wht_amount = 0.0
                         wht_source = f'Calculated ({wht_rate}%) on services'
-                    else:
-                        wht_source = 'None'
 
                 # Process lines
                 doc_lines = []
@@ -329,29 +324,32 @@ def _do_sync(since_ts=None, full=False):
 
                 net_a_payer = ttc - wht_amount - training_tax_amount
 
-                # Client config
-                client_cfg_ref = frappe.db.get_value('AMT Client Config', client_code, 'vat_exempt_ref')
+                # Client config (VAT exempt ref)
+                client_cfg_ref = frappe.db.get_value(
+                    'AMT Client Config', client_code, 'vat_exempt_ref') or ''
 
-                # Pull vessel/BL/ports/weight from linked Job File
-                job_no_clean = (d.get('job_no') or '').strip()
-                existing_comments = frappe.db.get_value('AMT Sales Invoice', invoice_no, 'comments') if exists else ''
-                if existing_comments:
-                    doc.comments = existing_comments
-
-                if job_no_clean and frappe.db.exists('AMT Job File', job_no_clean):
-                    jf = frappe.db.get_value('AMT Job File', job_no_clean,
-                        ['vessel_flight', 'mawb_bl', 'loading_port',
-                         'discharge_port', 'weight', 'volume'], as_dict=True)
-                    if jf:
-                        doc.vessel_flight   = jf.get('vessel_flight') or ''
-                        doc.bl_number       = jf.get('mawb_bl') or ''
-                        doc.loading_port    = jf.get('loading_port') or 'DLA'
-                        doc.discharge_port  = jf.get('discharge_port') or ''
-                        doc.taxable_weight  = float(jf.get('weight') or 0)
-                        doc.cargo_volume    = float(jf.get('volume') or 0)
+                # Job data — read directly from Navision job_map (pre-fetched)
+                job_no_clean   = (d.get('job_no') or '').strip()
+                jd             = job_map.get(job_no_clean, {})
+                vessel_flight  = jd.get('vessel') or ''
+                bl_number      = jd.get('bl') or jd.get('mawb') or ''
+                loading_port   = jd.get('origin_code') or 'DLA'
+                discharge_port = jd.get('dest_code') or 'DLA'
+                gross_weight   = float(jd.get('gross_weight') or 0)
+                taxable_weight = float(jd.get('taxable_weight') or 0)
+                cargo_volume   = float(jd.get('cargo_volume') or 0)
+                comments       = jd.get('cargo_description') or ''
 
                 # Upsert
                 exists = frappe.db.exists('AMT Sales Invoice', invoice_no)
+
+                # Preserve manually entered comments
+                if exists:
+                    existing_comments = frappe.db.get_value(
+                        'AMT Sales Invoice', invoice_no, 'comments')
+                    if existing_comments:
+                        comments = existing_comments
+
                 if exists:
                     doc = frappe.get_doc('AMT Sales Invoice', invoice_no)
                 else:
@@ -368,12 +366,12 @@ def _do_sync(since_ts=None, full=False):
                 doc.client_niu          = client_wht.get('client_niu', '')
                 doc.client_rccm         = client_wht.get('client_rccm', '')
                 doc.client_bank_code    = client_wht.get('bank_code', '')
-                doc.vat_exempt_ref      = client_cfg_ref or ''
+                doc.vat_exempt_ref      = client_cfg_ref
                 doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
                 doc.payment_terms       = (d.get('payment_terms') or '').strip()
                 doc.due_date            = d.get('due_date')
                 doc.posting_date        = d['posting_date']
-                doc.job_no              = (d.get('job_no') or '').strip()
+                doc.job_no              = job_no_clean
                 doc.currency            = (d.get('currency') or 'XAF').strip() or 'XAF'
                 doc.amount_ht           = ht
                 doc.amount_tva          = tva
@@ -387,6 +385,14 @@ def _do_sync(since_ts=None, full=False):
                 doc.nav_wht_amount      = nav_wht
                 doc.wht_source          = wht_source
                 doc.synced_at           = sync_time
+                doc.vessel_flight       = vessel_flight
+                doc.bl_number           = bl_number
+                doc.loading_port        = loading_port
+                doc.discharge_port      = discharge_port
+                doc.taxable_weight      = taxable_weight
+                doc.cargo_volume        = cargo_volume
+                doc.gross_weight        = gross_weight
+                doc.comments            = comments
 
                 # Lines
                 doc.lines = []
@@ -407,7 +413,7 @@ def _do_sync(since_ts=None, full=False):
                     frappe.db.commit()
 
             except Exception as e:
-                frappe.log_error(f"{invoice_no}: {str(e)}", "Invoice Sync — Record Error")
+                frappe.log_error(f"{invoice_no}: {str(e)[:300]}", "Invoice Sync Record Error")
                 continue
 
         frappe.db.commit()
@@ -418,59 +424,43 @@ def _do_sync(since_ts=None, full=False):
         return 0, 0, str(e)[:200]
 
 
-# ── Public API ───────────────────────────────────────────────────────────────
 def sync_invoices():
-    """Scheduled sync — incremental, skips if locked"""
     frappe.set_user('Administrator')
-
     locked, lock_time = is_locked()
     if locked:
         return f"Sync already running since {lock_time}"
-
     if not acquire_lock():
         return "Could not acquire lock"
-
     try:
         last_ts = get_last_sync_ts()
         synced, updated, error = _do_sync(since_ts=last_ts)
-
         if error:
             return f"Error: {error}"
-
         set_last_sync_ts(now_datetime())
         msg = f"Invoice Sync complete — {synced} new, {updated} updated"
         frappe.logger().info(f"[Invoice Sync] {msg}")
         return msg
-
     finally:
         release_lock()
 
 
 @frappe.whitelist()
 def manual_sync():
-    """Manual sync triggered by user — with lock check and status response"""
     locked, lock_time = is_locked()
     if locked:
-        return {
-            'status': 'locked',
-            'message': f'Sync already running since {lock_time}. Please wait.',
-        }
-
+        return {'status': 'locked', 'message': f'Sync already running since {lock_time}.'}
     if not acquire_lock():
         return {'status': 'locked', 'message': 'Could not acquire sync lock.'}
-
     try:
         last_ts = get_last_sync_ts()
         synced, updated, error = _do_sync(since_ts=last_ts)
-
         if error:
             return {'status': 'error', 'message': f'Sync error: {error}'}
-
         set_last_sync_ts(now_datetime())
         return {
-            'status': 'success',
+            'status':  'success',
             'message': f'✅ Sync complete — {synced} new, {updated} updated',
-            'new': synced,
+            'new':     synced,
             'updated': updated,
         }
     finally:
@@ -479,24 +469,20 @@ def manual_sync():
 
 @frappe.whitelist()
 def full_sync():
-    """Force full re-sync of last 90 days — admin only"""
     if 'System Manager' not in frappe.get_roles():
         frappe.throw("Only System Manager can run full sync")
-
     locked, lock_time = is_locked()
     if locked:
         return {'status': 'locked', 'message': f'Sync running since {lock_time}'}
-
     if not acquire_lock():
         return {'status': 'locked', 'message': 'Could not acquire lock'}
-
     try:
         synced, updated, error = _do_sync(full=True)
         if error:
             return {'status': 'error', 'message': error}
         set_last_sync_ts(now_datetime())
         return {
-            'status': 'success',
+            'status':  'success',
             'message': f'✅ Full sync complete — {synced} new, {updated} updated',
         }
     finally:
@@ -505,7 +491,6 @@ def full_sync():
 
 @frappe.whitelist()
 def get_sync_status():
-    """Return current sync status for UI"""
     locked, lock_time = is_locked()
     last_ts = get_last_sync_ts()
     total = frappe.db.count('AMT Sales Invoice')
