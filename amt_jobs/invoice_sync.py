@@ -550,3 +550,286 @@ def apply_wht(invoice_no, wht_rate, base_type="Services only"):
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+
+@frappe.whitelist()
+def sync_single_invoice(invoice_no):
+    """Fetch and sync a specific invoice from Navision by invoice number"""
+    invoice_no = (invoice_no or '').strip().upper()
+    if not invoice_no:
+        return {'success': False, 'message': 'Please enter an invoice number'}
+
+    try:
+        conn  = get_connection()
+        conn2 = get_connection()
+    except Exception as e:
+        return {'success': False, 'message': f'Cannot connect to Navision: {e}'}
+
+    try:
+        wht_clients = get_wht_clients(conn)
+        cur  = conn.cursor()
+        cur2 = conn2.cursor()
+
+        # Fetch the specific invoice
+        cur.execute("""
+            SELECT
+                h.[No_]                           AS invoice_no,
+                h.[Bill-to Customer No_]          AS client_code,
+                h.[Bill-to Name]                  AS client_name,
+                h.[Bill-to Name 2]                AS client_name2,
+                h.[Bill-to Address]               AS client_address,
+                h.[Bill-to Address 2]             AS client_address2,
+                h.[Bill-to City]                  AS client_city,
+                h.[VAT Registration No_]          AS client_vat_no,
+                h.[Posting Date]                  AS posting_date,
+                h.[Job No]                        AS job_no,
+                h.[Currency Code]                 AS currency,
+                h.[Amount Witholding Tax]         AS nav_wht_amount,
+                h.[_ Training tax]                AS nav_training_flag,
+                h.[Amount Training Tax]           AS nav_training_amount,
+                h.[Payment Terms Code]            AS payment_terms,
+                h.[Due Date]                      AS due_date,
+                h.[User ID]                       AS issued_by,
+                SUM(l.[Amount])                   AS amount_ht,
+                SUM(l.[Amount Including VAT])     AS amount_ttc
+            FROM [AMT_CM$Sales Invoice Header] h
+            JOIN [AMT_CM$Sales Invoice Line] l ON l.[Document No_] = h.[No_]
+            WHERE h.[No_] = ?
+            GROUP BY
+                h.[No_], h.[Bill-to Customer No_], h.[Bill-to Name],
+                h.[Bill-to Name 2], h.[Bill-to Address], h.[Bill-to Address 2],
+                h.[Bill-to City], h.[VAT Registration No_],
+                h.[Posting Date], h.[Job No], h.[Currency Code],
+                h.[Amount Witholding Tax], h.[_ Training tax],
+                h.[Amount Training Tax], h.[Payment Terms Code],
+                h.[Due Date], h.[User ID]
+        """, invoice_no)
+
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            conn2.close()
+            return {'success': False, 'message': f'Invoice {invoice_no} not found in Navision'}
+
+        cols = [desc[0] for desc in cur.description]
+        rows = [row]
+
+        # Fetch lines
+        cur2.execute("""
+            SELECT
+                l.[Document No_]              AS invoice_no,
+                l.[Line No_]                  AS line_no,
+                l.[Description]               AS description,
+                l.[Description 2]             AS description2,
+                l.[Quantity]                  AS quantity,
+                l.[Unit Price]                AS unit_price,
+                l.[VAT _]                     AS vat_pct,
+                l.[Amount]                    AS amount,
+                l.[Amount Including VAT]      AS amount_ttc,
+                l.[Unit of Measure Code]      AS uom,
+                l.[WHT Product Posting Group] AS wht_prod_group,
+                l.[Gen_ Prod_ Posting Group]  AS gen_prod_group,
+                l.[Bold]                      AS is_bold,
+                l.[End Text]                  AS end_text,
+                l.[Sub Total (Report)]        AS is_subtotal
+            FROM [AMT_CM$Sales Invoice Line] l
+            WHERE l.[Document No_] = ?
+            ORDER BY l.[Line No_]
+        """, invoice_no)
+
+        line_rows = cur2.fetchall()
+        line_cols = [desc[0] for desc in cur2.description]
+
+        from collections import defaultdict
+        invoice_lines = defaultdict(list)
+        for lr in line_rows:
+            ld = dict(zip(line_cols, lr))
+            invoice_lines[ld['invoice_no']].append(ld)
+
+        # Fetch job data from Navision
+        d = dict(zip(cols, row))
+        job_no_clean = (d.get('job_no') or '').strip()
+        job_map = {}
+        if job_no_clean:
+            cur.execute("""
+                SELECT
+                    j.[No_]                           AS job_no,
+                    RTRIM(ISNULL(j.[Vessel],''))      AS vessel,
+                    RTRIM(ISNULL(j.[BL],''))          AS bl,
+                    RTRIM(ISNULL(j.[MAWB],''))        AS mawb,
+                    RTRIM(ISNULL(j.[Origin Code],'')) AS origin_code,
+                    RTRIM(ISNULL(j.[Destination Code],'')) AS dest_code,
+                    ISNULL(m.[Gross Weight KG], 0)    AS gross_weight,
+                    ISNULL(m.[Taxable Weight], 0)     AS taxable_weight,
+                    ISNULL(m.[Volume], 0)             AS cargo_volume,
+                    RTRIM(ISNULL(m.[Description],'')) AS cargo_description
+                FROM [AMT_CM$Job] j
+                LEFT JOIN [AMT_CM$Marchandises] m ON m.[Job No_] = j.[No_]
+                WHERE j.[No_] = ?
+            """, job_no_clean)
+            jr = cur.fetchone()
+            if jr:
+                jcols = [desc[0] for desc in cur.description]
+                jd = dict(zip(jcols, jr))
+                job_map[job_no_clean] = {
+                    'vessel':            str(jd.get('vessel') or '').strip(),
+                    'bl':                str(jd.get('bl') or '').strip(),
+                    'mawb':              str(jd.get('mawb') or '').strip(),
+                    'origin_code':       str(jd.get('origin_code') or '').strip(),
+                    'dest_code':         str(jd.get('dest_code') or '').strip(),
+                    'gross_weight':      float(jd.get('gross_weight') or 0),
+                    'taxable_weight':    float(jd.get('taxable_weight') or 0),
+                    'cargo_volume':      float(jd.get('cargo_volume') or 0),
+                    'cargo_description': str(jd.get('cargo_description') or '').strip(),
+                }
+
+        conn.close()
+        conn2.close()
+
+        # Process using shared logic
+        from frappe.utils import now_datetime
+        sync_time = now_datetime()
+
+        d = dict(zip(cols, rows[0]))
+        client_code = (d['client_code'] or '').strip()
+        ht  = float(d['amount_ht'] or 0)
+        ttc = float(d['amount_ttc'] or 0)
+        tva = ttc - ht
+
+        nav_wht             = float(d['nav_wht_amount'] or 0)
+        wht_applies         = False
+        wht_rate            = 0.0
+        wht_amount          = 0.0
+        wht_source          = 'None'
+        training_tax        = False
+        training_tax_amount = float(d['nav_training_amount'] or 0)
+
+        client_wht = wht_clients.get(client_code, {})
+        if client_wht.get('wht_applies'):
+            wht_applies = True
+            wht_rate    = get_wht_rate(client_wht.get('wht_group', ''))
+            training_tax = client_wht.get('training_tax', False)
+            if nav_wht > 0:
+                wht_amount = nav_wht
+                wht_source = 'Navision'
+            elif wht_rate > 0:
+                wht_source = f'Calculated ({wht_rate}%) on services'
+
+        doc_lines = []
+        service_total = 0.0
+        for line in invoice_lines.get(invoice_no, []):
+            desc = (line['description'] or '').strip()
+            if not desc and not float(line['amount'] or 0):
+                continue
+            line_amount = float(line['amount'] or 0)
+            gen_prod = (line.get('gen_prod_group') or '').strip()
+
+            if line['is_subtotal']:
+                line_type = 'Subtotal'
+            elif line['end_text']:
+                line_type = 'Text'
+            elif gen_prod.startswith('DEBOURS'):
+                line_type = 'Outlay'
+            elif line_amount == 0:
+                line_type = 'Text'
+            else:
+                line_type = 'Service'
+                service_total += line_amount
+
+            doc_lines.append({
+                'line_no':        int(line['line_no'] or 0),
+                'description':    desc,
+                'description2':   (line['description2'] or '').strip(),
+                'quantity':       float(line['quantity'] or 0),
+                'unit_price':     float(line['unit_price'] or 0),
+                'vat_pct':        float(line['vat_pct'] or 0),
+                'amount':         line_amount,
+                'amount_ttc':     float(line['amount_ttc'] or 0),
+                'uom':            (line['uom'] or '').strip(),
+                'line_type':      line_type,
+                'is_bold':        int(line['is_bold'] or 0),
+                'gen_prod_group': gen_prod,
+            })
+
+        if wht_applies and wht_rate > 0 and service_total > 0 and nav_wht == 0:
+            wht_amount = round(service_total * wht_rate / 100, 0)
+
+        net_a_payer    = ttc - wht_amount - training_tax_amount
+        client_cfg_ref = frappe.db.get_value('AMT Client Config', client_code, 'vat_exempt_ref') or ''
+        jd             = job_map.get(job_no_clean, {})
+
+        # Preserve comments
+        exists = frappe.db.exists('AMT Sales Invoice', invoice_no)
+        existing_comments = ''
+        if exists:
+            existing_comments = frappe.db.get_value('AMT Sales Invoice', invoice_no, 'comments') or ''
+
+        if exists:
+            doc = frappe.get_doc('AMT Sales Invoice', invoice_no)
+        else:
+            doc = frappe.new_doc('AMT Sales Invoice')
+            doc.invoice_no = invoice_no
+
+        doc.client_code         = client_code
+        doc.client_name         = (d['client_name'] or '').strip()
+        doc.client_name2        = (d.get('client_name2') or '').strip()
+        doc.client_address      = (d.get('client_address') or '').strip()
+        doc.client_address2     = (d.get('client_address2') or '').strip()
+        doc.client_city         = (d.get('client_city') or '').strip()
+        doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
+        doc.client_niu          = client_wht.get('client_niu', '')
+        doc.client_rccm         = client_wht.get('client_rccm', '')
+        doc.client_bank_code    = client_wht.get('bank_code', '')
+        doc.vat_exempt_ref      = client_cfg_ref
+        doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
+        doc.payment_terms       = (d.get('payment_terms') or '').strip()
+        doc.due_date            = d.get('due_date')
+        doc.posting_date        = d['posting_date']
+        doc.job_no              = job_no_clean
+        doc.currency            = (d.get('currency') or 'XAF').strip() or 'XAF'
+        doc.amount_ht           = ht
+        doc.amount_tva          = tva
+        doc.amount_ttc          = ttc
+        doc.wht_applies         = wht_applies
+        doc.wht_rate            = wht_rate
+        doc.wht_amount          = wht_amount
+        doc.training_tax        = training_tax
+        doc.training_tax_amount = training_tax_amount
+        doc.net_a_payer         = net_a_payer
+        doc.nav_wht_amount      = nav_wht
+        doc.wht_source          = wht_source
+        doc.synced_at           = sync_time
+        doc.vessel_flight       = jd.get('vessel') or ''
+        doc.bl_number           = jd.get('bl') or jd.get('mawb') or ''
+        doc.loading_port        = jd.get('origin_code') or 'DLA'
+        doc.discharge_port      = jd.get('dest_code') or 'DLA'
+        doc.gross_weight        = float(jd.get('gross_weight') or 0)
+        doc.taxable_weight      = float(jd.get('taxable_weight') or 0)
+        doc.cargo_volume        = float(jd.get('cargo_volume') or 0)
+        doc.comments            = existing_comments or jd.get('cargo_description') or ''
+
+        doc.lines = []
+        for line_data in doc_lines:
+            doc.append('lines', line_data)
+
+        doc.flags.ignore_permissions = True
+        doc.flags.ignore_mandatory   = True
+
+        if exists:
+            doc.save()
+            action = 'updated'
+        else:
+            doc.insert()
+            action = 'created'
+
+        frappe.db.commit()
+        return {
+            'success': True,
+            'message': f'✅ Invoice {invoice_no} {action} successfully — {len(doc_lines)} lines',
+            'invoice_no': invoice_no,
+            'action': action,
+        }
+
+    except Exception as e:
+        frappe.log_error(str(e)[:500], f"Single Invoice Sync Error: {invoice_no}")
+        return {'success': False, 'message': str(e)[:200]}
