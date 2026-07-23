@@ -175,6 +175,7 @@ def _do_sync(since_ts=None, full=False):
                 l.[Amount Including VAT]      AS amount_ttc,
                 l.[Unit of Measure Code]      AS uom,
                 l.[WHT Product Posting Group] AS wht_prod_group,
+                l.[Gen_ Prod_ Posting Group]  AS gen_prod_group,
                 l.[Bold]                      AS is_bold,
                 l.[End Text]                  AS end_text,
                 l.[Sub Total (Report)]        AS is_subtotal
@@ -290,32 +291,34 @@ def _do_sync(since_ts=None, full=False):
                     if not desc and not float(line['amount'] or 0):
                         continue
                     line_amount = float(line['amount'] or 0)
-                    wht_grp = (line.get('wht_prod_group') or '').strip()
+                    wht_grp  = (line.get('wht_prod_group') or '').strip()
+                    gen_prod = (line.get('gen_prod_group') or '').strip()
 
                     if line['is_subtotal']:
                         line_type = 'Subtotal'
                     elif line['end_text']:
                         line_type = 'Text'
-                    elif wht_grp == 'WHT_0':
+                    elif gen_prod.startswith('DEBOURS'):
                         line_type = 'Outlay'
-                    elif wht_grp:
+                    elif line_amount == 0:
+                        line_type = 'Text'
+                    else:
                         line_type = 'Service'
                         service_total_for_wht += line_amount
-                    else:
-                        line_type = 'Outlay'
 
                     doc_lines.append({
-                        'line_no':      int(line['line_no'] or 0),
-                        'description':  desc,
-                        'description2': (line['description2'] or '').strip(),
-                        'quantity':     float(line['quantity'] or 0),
-                        'unit_price':   float(line['unit_price'] or 0),
-                        'vat_pct':      float(line['vat_pct'] or 0),
-                        'amount':       line_amount,
-                        'amount_ttc':   float(line['amount_ttc'] or 0),
-                        'uom':          (line['uom'] or '').strip(),
-                        'line_type':    line_type,
-                        'is_bold':      int(line['is_bold'] or 0),
+                        'line_no':       int(line['line_no'] or 0),
+                        'description':   desc,
+                        'description2':  (line['description2'] or '').strip(),
+                        'quantity':      float(line['quantity'] or 0),
+                        'unit_price':    float(line['unit_price'] or 0),
+                        'vat_pct':       float(line['vat_pct'] or 0),
+                        'amount':        line_amount,
+                        'amount_ttc':    float(line['amount_ttc'] or 0),
+                        'uom':           (line['uom'] or '').strip(),
+                        'line_type':     line_type,
+                        'is_bold':       int(line['is_bold'] or 0),
+                        'gen_prod_group': gen_prod,
                     })
 
                 # Recalculate WHT on services only
@@ -500,3 +503,50 @@ def get_sync_status():
         'last_sync': str(last_ts) if last_ts else None,
         'total':     total,
     }
+
+
+@frappe.whitelist()
+def apply_wht(invoice_no, wht_rate, base_type="Services only"):
+    """Apply or update WHT on a specific invoice"""
+    allowed_roles = ["System Manager", "AMT Invoicing Officer",
+                     "AMT Director of Finance", "AMT Finance Officer"]
+    if not any(r in frappe.get_roles() for r in allowed_roles):
+        frappe.throw("Not permitted to apply WHT")
+
+    try:
+        wht_rate = float(wht_rate)
+        if wht_rate not in [2.2, 5.5]:
+            frappe.throw("Invalid WHT rate. Must be 2.2 or 5.5")
+
+        doc = frappe.get_doc("AMT Sales Invoice", invoice_no)
+
+        # Calculate WHT base
+        if base_type == "Services only":
+            base = sum(
+                l.amount for l in doc.lines
+                if l.line_type == "Service"
+            )
+        else:
+            base = doc.amount_ht
+
+        wht_amount  = round(base * wht_rate / 100, 0)
+        net_a_payer = doc.amount_ttc - wht_amount
+
+        doc.wht_applies  = 1
+        doc.wht_rate     = wht_rate
+        doc.wht_amount   = wht_amount
+        doc.net_a_payer  = net_a_payer
+        doc.wht_source   = f"Calculated ({wht_rate}%) on services"
+
+        doc.flags.ignore_permissions = True
+        doc.flags.ignore_mandatory   = True
+        doc.save()
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "message": f"✅ WHT applied: {wht_rate}% — AIR retenu: {wht_amount:,.0f} XAF — NET À PAYER: {net_a_payer:,.0f} XAF"
+        }
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}

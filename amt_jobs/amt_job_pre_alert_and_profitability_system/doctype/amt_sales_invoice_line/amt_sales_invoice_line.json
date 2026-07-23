@@ -16,7 +16,8 @@
   "amount_ttc",
   "uom",
   "line_type",
-  "is_bold"
+  "is_bold",
+  "gen_prod_group"
  ],
  "fields": [
   {
@@ -93,13 +94,20 @@
    "fieldtype": "Check",
    "label": "Bold",
    "read_only": 1
+  },
+  {
+   "fieldname": "gen_prod_group",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Gen Prod Posting Group",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-10 19:20:35.076664",
+ "modified": "2026-07-23 16:16:42.754610",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Sales Invoice Line",
