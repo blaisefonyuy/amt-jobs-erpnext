@@ -270,6 +270,7 @@ scheduler_events = {
         # Invoice sync — every 10 minutes
         "*/10 * * * *": [
             "amt_jobs.invoice_sync.sync_invoices",
+            "amt_jobs.credit_note_sync.sync_credit_notes",
         ],
     },
 }

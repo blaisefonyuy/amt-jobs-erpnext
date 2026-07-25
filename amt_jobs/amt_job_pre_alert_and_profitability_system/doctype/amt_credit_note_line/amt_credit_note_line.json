@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-24 11:27:22.249405",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "line_no",
+  "description",
+  "description2",
+  "quantity",
+  "unit_price",
+  "vat_pct",
+  "amount",
+  "amount_ttc",
+  "uom",
+  "line_type",
+  "is_bold",
+  "gen_prod_group"
+ ],
+ "fields": [
+  {
+   "fieldname": "line_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Line No."
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "description2",
+   "fieldtype": "Data",
+   "label": "Description 2"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "unit_price",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Unit Price"
+  },
+  {
+   "fieldname": "vat_pct",
+   "fieldtype": "Float",
+   "label": "VAT %"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount"
+  },
+  {
+   "fieldname": "amount_ttc",
+   "fieldtype": "Currency",
+   "label": "Amount TTC"
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Data",
+   "label": "UOM"
+  },
+  {
+   "fieldname": "line_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Line Type",
+   "options": "Service\nOutlay\nText\nSubtotal"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_bold",
+   "fieldtype": "Check",
+   "label": "Bold"
+  },
+  {
+   "fieldname": "gen_prod_group",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Gen Prod Group"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-24 11:27:22.249405",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Credit Note Line",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

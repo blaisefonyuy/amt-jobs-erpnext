@@ -1,0 +1,365 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:credit_note_no",
+ "creation": "2026-07-24 11:28:06.316277",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "credit_note_no",
+  "client_code",
+  "client_name",
+  "posting_date",
+  "job_no",
+  "client_name2",
+  "client_address",
+  "client_address2",
+  "client_city",
+  "client_niu",
+  "client_rccm",
+  "client_bank_code",
+  "vat_exempt_ref",
+  "due_date",
+  "payment_terms",
+  "currency",
+  "vessel_flight",
+  "bl_number",
+  "loading_port",
+  "discharge_port",
+  "gross_weight",
+  "taxable_weight",
+  "cargo_volume",
+  "comments",
+  "amount_ht",
+  "amount_tva",
+  "amount_ttc",
+  "wht_applies",
+  "wht_rate",
+  "wht_amount",
+  "wht_source",
+  "nav_wht_amount",
+  "training_tax",
+  "training_tax_amount",
+  "net_a_payer",
+  "issued_by",
+  "synced_at",
+  "lines"
+ ],
+ "fields": [
+  {
+   "bold": 1,
+   "fieldname": "credit_note_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Credit Note No.",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "client_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Client Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Client Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_no",
+   "fieldtype": "Data",
+   "label": "Job No.",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_name2",
+   "fieldtype": "Data",
+   "label": "Client Name 2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_address",
+   "fieldtype": "Data",
+   "label": "Client Address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_address2",
+   "fieldtype": "Data",
+   "label": "Client Address 2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_city",
+   "fieldtype": "Data",
+   "label": "Client City",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_niu",
+   "fieldtype": "Data",
+   "label": "Client NIU",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_rccm",
+   "fieldtype": "Data",
+   "label": "Client RCCM",
+   "read_only": 1
+  },
+  {
+   "fieldname": "client_bank_code",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Client Bank Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_exempt_ref",
+   "fieldtype": "Data",
+   "label": "VAT Exempt Ref",
+   "read_only": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_terms",
+   "fieldtype": "Data",
+   "label": "Payment Terms",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vessel_flight",
+   "fieldtype": "Data",
+   "label": "Vessel / Flight",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bl_number",
+   "fieldtype": "Data",
+   "label": "BL / MAWB No.",
+   "read_only": 1
+  },
+  {
+   "fieldname": "loading_port",
+   "fieldtype": "Data",
+   "label": "Loading Port",
+   "read_only": 1
+  },
+  {
+   "fieldname": "discharge_port",
+   "fieldtype": "Data",
+   "label": "Discharge Port",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gross_weight",
+   "fieldtype": "Float",
+   "label": "Gross Weight (KG)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "taxable_weight",
+   "fieldtype": "Float",
+   "label": "Taxable Weight",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cargo_volume",
+   "fieldtype": "Float",
+   "label": "Volume",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comments",
+   "fieldtype": "Small Text",
+   "label": "Comments"
+  },
+  {
+   "fieldname": "amount_ht",
+   "fieldtype": "Currency",
+   "label": "Montant HT",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount_tva",
+   "fieldtype": "Currency",
+   "label": "Montant TVA",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount_ttc",
+   "fieldtype": "Currency",
+   "label": "Montant TTC",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "wht_applies",
+   "fieldtype": "Check",
+   "label": "WHT Applies",
+   "read_only": 1
+  },
+  {
+   "fieldname": "wht_rate",
+   "fieldtype": "Float",
+   "label": "WHT Rate (%)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "wht_amount",
+   "fieldtype": "Currency",
+   "label": "WHT Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "wht_source",
+   "fieldtype": "Data",
+   "label": "WHT Source",
+   "read_only": 1
+  },
+  {
+   "fieldname": "nav_wht_amount",
+   "fieldtype": "Currency",
+   "label": "WHT Amount (Nav)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "training_tax",
+   "fieldtype": "Check",
+   "label": "Training Tax",
+   "read_only": 1
+  },
+  {
+   "fieldname": "training_tax_amount",
+   "fieldtype": "Currency",
+   "label": "Training Tax Amount",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "net_a_payer",
+   "fieldtype": "Currency",
+   "label": "NET \u00c0 PAYER",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Data",
+   "label": "Issued By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "synced_at",
+   "fieldtype": "Datetime",
+   "label": "Last Synced",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lines",
+   "fieldtype": "Table",
+   "label": "Lines",
+   "options": "AMT Credit Note Line"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-24 11:28:06.316277",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Credit Note",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Director of Finance",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Finance Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoicing Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoicing Agent",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "AMT Invoice Dispatcher",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "client_name"
+}
