@@ -508,7 +508,8 @@ def get_sync_status():
 @frappe.whitelist()
 def apply_wht(invoice_no, wht_rate, base_type="Services only"):
     """Apply or update WHT on a specific invoice"""
-    allowed_roles = ["System Manager", "AMT Invoicing Officer",
+    allowed_roles = ["System Manager", "AMT Invoicing Agent",
+                     "AMT Invoicing Officer", "AMT Head of Invoicing",
                      "AMT Director of Finance", "AMT Finance Officer"]
     if not any(r in frappe.get_roles() for r in allowed_roles):
         frappe.throw("Not permitted to apply WHT")
