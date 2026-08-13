@@ -236,7 +236,7 @@ class AMTJobFile(Document):
 
         # Document requirement check
         # 2=auto-verified, 4/7=HOD auth, 15-20=recovery/closure auth
-        doc_exempt = [2, 4, 7, 15, 16, 17, 18, 19, 20]
+        doc_exempt = [2, 4, 7, 9, 15, 16, 17, 18, 19, 20]
         if seq not in doc_exempt and not proof_document:
             frappe.throw(
                 f"Stage {seq} ({name}) requires a proof document. "
