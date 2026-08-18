@@ -168,7 +168,11 @@ class AMTJobFile(Document):
         if not self.freight_type:
             return
 
-        stages = get_stages_for_freight_type(self.freight_type)
+        stages = get_stages_for_freight_type(
+            self.freight_type,
+            finance_timing=self.finance_timing or 'Pre-Finance',
+            has_containers=bool(self.has_containers)
+        )
         if not stages:
             return
 
@@ -204,7 +208,11 @@ class AMTJobFile(Document):
         if not self.freight_type:
             frappe.throw("Freight Type not set on this file.")
 
-        stages = get_stages_for_freight_type(self.freight_type)
+        stages = get_stages_for_freight_type(
+            self.freight_type,
+            finance_timing=self.finance_timing or 'Pre-Finance',
+            has_containers=bool(self.has_containers)
+        )
         if not stages:
             frappe.throw("No stage template found for: " + self.freight_type)
 
@@ -236,7 +244,22 @@ class AMTJobFile(Document):
 
         # Document requirement check
         # 2=auto-verified, 4/7=HOD auth, 15-20=recovery/closure auth
-        doc_exempt = [2, 4, 7, 9, 15, 16, 17, 18, 19, 20]
+        # Build doc_exempt dynamically based on stage names
+        no_doc_stages = [
+            "File Created in Navision",
+            "Customs Declaration Assigned",
+            "Finance Request Validated by HOD",
+            "Agent Confirms Funds Received",
+            "Logistics Coordinator Assigned",
+            "Vehicle / Truck Requested",
+            "Vehicle Dispatched to Pickup",
+            "Client Acknowledges Invoice",
+            "Invoice Due Date",
+            "Files Transferred for Closing",
+            "Director of Operations Signs Closure",
+            "Job Closed in System",
+        ]
+        doc_exempt = [s[0] for s in stages if s[1] in no_doc_stages]
         if seq not in doc_exempt and not proof_document:
             frappe.throw(
                 f"Stage {seq} ({name}) requires a proof document. "

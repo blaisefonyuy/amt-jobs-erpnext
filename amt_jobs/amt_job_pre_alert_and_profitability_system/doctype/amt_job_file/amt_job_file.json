@@ -120,7 +120,11 @@
   "gross_weight",
   "taxable_weight",
   "cargo_volume",
-  "container_no"
+  "container_no",
+  "finance_timing",
+  "has_containers",
+  "invoice_duties_separately",
+  "logistics_coordinator"
  ],
  "fields": [
   {
@@ -841,12 +845,41 @@
    "fieldtype": "Data",
    "label": "Container No.",
    "read_only": 1
+  },
+  {
+   "default": "Pre-Finance",
+   "description": "Pre-Finance: finance before cargo. Post-Finance: after cargo arrives. Parallel: both simultaneously.",
+   "fieldname": "finance_timing",
+   "fieldtype": "Select",
+   "label": "Finance Timing",
+   "options": "Pre-Finance\nPost-Finance\nParallel"
+  },
+  {
+   "default": "0",
+   "description": "Check if job involves containers \u2014 adds Empty Container Return stage",
+   "fieldname": "has_containers",
+   "fieldtype": "Check",
+   "label": "Has Containers"
+  },
+  {
+   "default": "0",
+   "description": "Check if customs duties should be invoiced separately from transport/services",
+   "fieldname": "invoice_duties_separately",
+   "fieldtype": "Check",
+   "label": "Invoice Customs Duties Separately"
+  },
+  {
+   "description": "Logistics coordinator assigned for vehicle dispatch and delivery",
+   "fieldname": "logistics_coordinator",
+   "fieldtype": "Link",
+   "label": "Logistics Coordinator",
+   "options": "User"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-21 17:51:35.431227",
+ "modified": "2026-08-18 16:03:05.484151",
  "modified_by": "Administrator",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "AMT Job File",
