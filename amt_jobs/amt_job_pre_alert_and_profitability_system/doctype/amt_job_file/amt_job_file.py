@@ -233,7 +233,9 @@ class AMTJobFile(Document):
         user_roles   = frappe.get_roles(frappe.session.user)
         is_manager   = any(r in user_roles for r in [
             "System Manager", "AMT Director of Operations",
-            "AMT Director General"
+            "AMT Director General",
+            "AMT Head of Air Freight", "AMT Head of Sea Freight",
+            "AMT Customs Head",
         ])
 
         if not is_manager and owner_role and owner_role not in user_roles:
@@ -297,6 +299,21 @@ class AMTJobFile(Document):
 
         # Auto-fill date fields — now handled via Finance Requests table
         # Old single-request fields removed — finance tracked per request
+
+        # Auto-assign logistics coordinator when reaching logistics stage
+        if name in ["Logistics Coordinator Assigned", "Vehicle / Truck Requested",
+                    "Vehicle Dispatched to Pickup", "Cargo Picked Up",
+                    "Delivery Note Signed by Client", "Empty Container Returned"]:
+            if not self.logistics_coordinator:
+                # Find first user with AMT Head of Logistics role
+                log_coord = frappe.db.sql("""
+                    SELECT parent FROM `tabHas Role`
+                    WHERE role = 'AMT Head of Logistics'
+                    AND parent != 'Administrator'
+                    LIMIT 1
+                """)
+                if log_coord:
+                    self.logistics_coordinator = log_coord[0][0]
 
         # Sync current stage
         self._sync_current_stage()
