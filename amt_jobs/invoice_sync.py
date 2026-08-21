@@ -75,25 +75,33 @@ def is_locked():
         return False, None
 
 def get_wht_clients(conn):
+    """Get ALL clients — WHT details + NIU/RCCM for everyone"""
     cur = conn.cursor()
     cur.execute("""
         SELECT [No_], [WHT Business Posting Group], [_ Training tax],
-               [Payment Bank], [GLN], [Address]
+               [Payment Bank], [GLN], [Address], [Address 2],
+               [Withholding Tax Applies]
         FROM [AMT_CM$Customer]
-        WHERE [Withholding Tax Applies] = 1
     """)
     rows = cur.fetchall()
     cols = [desc[0] for desc in cur.description]
     clients = {}
     for r in rows:
         d = dict(zip(cols, r))
+        addr  = (d['Address']   or '').strip()
+        addr2 = (d['Address 2'] or '').strip()
+        # Detect RCCM — starts with RC/
+        import re as _re2
+        rccm = addr if _re2.match(r'RC/', addr) else ''
         clients[d['No_']] = {
-            'wht_applies':  True,
-            'wht_group':    (d['WHT Business Posting Group'] or '').strip(),
-            'training_tax': bool(d['_ Training tax']),
-            'bank_code':    (d['Payment Bank'] or '').strip(),
-            'client_niu':   (d['GLN'] or '').strip(),
-            'client_rccm':  (d['Address'] or '').strip(),
+            'wht_applies':    bool(d['Withholding Tax Applies']),
+            'wht_group':      (d['WHT Business Posting Group'] or '').strip(),
+            'training_tax':   bool(d['_ Training tax']),
+            'bank_code':      (d['Payment Bank'] or '').strip(),
+            'client_niu':     (d['GLN'] or '').strip(),
+            'client_address': addr,
+            'client_address2': addr2,
+            'client_rccm':    rccm,
         }
     return clients
 
@@ -362,16 +370,14 @@ def _do_sync(since_ts=None, full=False):
                 doc.client_code         = client_code
                 doc.client_name         = (d['client_name'] or '').strip()
                 doc.client_name2        = (d.get('client_name2') or '').strip()
-                # In Navision: Address = RCCM, Address 2 = real postal address
-                doc.client_address      = (d.get('client_address2') or '').strip()
-                doc.client_address2     = ''
-                # Override RCCM with Address field from Navision
-                if not client_wht.get('client_rccm'):
-                    doc.client_rccm = (d.get('client_address') or '').strip()
+                # Use customer master address (Address/Address2 from AMT_CM$Customer)
+                doc.client_address      = client_wht.get('client_address', '') or (d.get('client_address') or '').strip()
+                doc.client_address2     = client_wht.get('client_address2', '') or (d.get('client_address2') or '').strip()
                 doc.client_city         = (d.get('client_city') or '').strip()
                 doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
+                # NIU and RCCM from customer master (all clients)
                 doc.client_niu          = client_wht.get('client_niu', '')
-                doc.client_rccm         = client_wht.get('client_rccm', '')
+                doc.client_rccm         = client_wht.get('client_rccm', '') or (d.get('client_address') or '').strip()
                 doc.client_bank_code    = client_wht.get('bank_code', '')
                 doc.vat_exempt_ref      = client_cfg_ref
                 doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
@@ -783,12 +789,13 @@ def sync_single_invoice(invoice_no):
         doc.client_code         = client_code
         doc.client_name         = (d['client_name'] or '').strip()
         doc.client_name2        = (d.get('client_name2') or '').strip()
-        doc.client_address      = (d.get('client_address') or '').strip()
-        doc.client_address2     = (d.get('client_address2') or '').strip()
+        # Use customer master address fields
+        doc.client_address      = client_wht.get('client_address', '') or (d.get('client_address') or '').strip()
+        doc.client_address2     = client_wht.get('client_address2', '') or (d.get('client_address2') or '').strip()
         doc.client_city         = (d.get('client_city') or '').strip()
         doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
         doc.client_niu          = client_wht.get('client_niu', '')
-        doc.client_rccm         = client_wht.get('client_rccm', '')
+        doc.client_rccm         = client_wht.get('client_rccm', '') or (d.get('client_address') or '').strip()
         doc.client_bank_code    = client_wht.get('bank_code', '')
         doc.vat_exempt_ref      = client_cfg_ref
         doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
