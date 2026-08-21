@@ -357,3 +357,62 @@ def complete_stage(docname, proof_document=None, notes=None, amount=None):
         notes=notes,
         amount=amount
     )
+
+
+@frappe.whitelist()
+def rebuild_stages(docname, finance_timing=None, has_containers=None):
+    """Rebuild stage log when HOD changes finance_timing or has_containers"""
+    doc = frappe.get_doc('AMT Job File', docname)
+
+    # Only HOD/Manager can rebuild stages
+    roles = frappe.get_roles(frappe.session.user)
+    allowed = ['System Manager', 'AMT Head of Air Freight', 'AMT Head of Sea Freight',
+               'AMT Customs Head', 'AMT Director of Operations', 'AMT Director General']
+    if not any(r in roles for r in allowed):
+        frappe.throw("Only Department Heads can change finance timing")
+
+    # Update fields
+    if finance_timing:
+        doc.finance_timing = finance_timing
+    if has_containers is not None:
+        doc.has_containers = int(has_containers)
+
+    # Get completed stages from history
+    completed_seqs = {h.seq: h for h in (doc.stage_history or [])}
+
+    # Build new stages
+    from amt_jobs.stage_templates import get_stages_for_freight_type
+    new_stages = get_stages_for_freight_type(
+        doc.freight_type,
+        finance_timing=doc.finance_timing or 'Pre-Finance',
+        has_containers=bool(doc.has_containers)
+    )
+
+    # Rebuild stage log
+    doc.stage_log = []
+    for s in new_stages:
+        seq, name, phase, role = s[0], s[1], s[2], s[3]
+        is_done = any(h.stage_name == name for h in (doc.stage_history or []))
+        doc.append('stage_log', {
+            'seq':            seq,
+            'stage_name':     name,
+            'stage_cycle':    phase,
+            'owner_role':     role,
+            'stage_complete': 1 if is_done else 0,
+            'stage_status':   'Complete' if is_done else 'Pending',
+        })
+
+    # Re-sync current stage
+    doc._sync_current_stage()
+    doc.flags.ignore_permissions = True
+    doc.flags.ignore_mandatory = True
+    doc.save()
+    frappe.db.commit()
+
+    return {
+        'success': True,
+        'message': f'Stages rebuilt — {len(new_stages)} stages for {doc.finance_timing}',
+        'total_stages': len(new_stages),
+        'finance_timing': doc.finance_timing,
+        'has_containers': bool(doc.has_containers),
+    }

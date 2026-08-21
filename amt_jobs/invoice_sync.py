@@ -362,8 +362,12 @@ def _do_sync(since_ts=None, full=False):
                 doc.client_code         = client_code
                 doc.client_name         = (d['client_name'] or '').strip()
                 doc.client_name2        = (d.get('client_name2') or '').strip()
-                doc.client_address      = (d.get('client_address') or '').strip()
-                doc.client_address2     = (d.get('client_address2') or '').strip()
+                # In Navision: Address = RCCM, Address 2 = real postal address
+                doc.client_address      = (d.get('client_address2') or '').strip()
+                doc.client_address2     = ''
+                # Override RCCM with Address field from Navision
+                if not client_wht.get('client_rccm'):
+                    doc.client_rccm = (d.get('client_address') or '').strip()
                 doc.client_city         = (d.get('client_city') or '').strip()
                 doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
                 doc.client_niu          = client_wht.get('client_niu', '')
