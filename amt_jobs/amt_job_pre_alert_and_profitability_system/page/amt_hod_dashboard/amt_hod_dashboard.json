@@ -1,0 +1,17 @@
+{
+ "creation": "2026-08-19 00:00:00",
+ "doctype": "Page",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "amt-hod-dashboard",
+ "page_name": "amt-hod-dashboard",
+ "roles": [
+  {"role": "AMT Head of Air Freight"},
+  {"role": "AMT Head of Sea Freight"},
+  {"role": "AMT Customs Head"},
+  {"role": "AMT Director of Operations"},
+  {"role": "AMT Director General"},
+  {"role": "System Manager"}
+ ],
+ "standard": "Yes",
+ "title": "Operations HOD Dashboard"
+}
