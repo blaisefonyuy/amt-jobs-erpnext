@@ -96,6 +96,7 @@ def get_dashboard_data():
 
         file_data = {
             'name':           j.name,
+            'nav_ref':        j.navision_job_ref or j.name,
             'navision_ref':   j.navision_job_ref or j.name,
             'client':         (j.client_name or '')[:30],
             'freight_type':   j.freight_type or '',

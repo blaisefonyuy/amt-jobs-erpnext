@@ -147,6 +147,9 @@ frappe.pages['amt-hod-dashboard'].on_page_load = function(wrapper) {
             const phase_color = phase_colors[s.phase] || BLUE;
 
             // Phase header row
+            // Rename Unassigned to No Agent Assigned
+            const stage_display = s.name === 'Unassigned' ? 'No Agent Assigned' : s.name;
+
             if (s.phase !== last_phase) {
                 const phase_total = funnel.filter(f => f.phase === s.phase).reduce((a,f) => a+f.count, 0);
                 html += `<tr style="background:${phase_color}10;border-top:2px solid ${phase_color};">
@@ -166,7 +169,7 @@ frappe.pages['amt-hod-dashboard'].on_page_load = function(wrapper) {
                 onmouseout="this.style.background=''">
                 <td style="padding:5px 12px 5px 24px;font-size:11px;color:#999;width:30px;">${s.seq||'—'}</td>
                 <td style="padding:5px 10px;font-size:12px;font-weight:${s.count>0?'600':'400'};
-                    color:${s.count>0?'#333':'#bbb'};">${s.name}</td>
+                    color:${s.count>0?'#333':'#bbb'};">${stage_display}</td>
                 <td style="padding:5px 10px;font-size:11px;color:#888;">${(s.role||'').replace('AMT ','')}</td>
                 <td style="padding:5px 10px;text-align:center;width:70px;">
                     ${s.count > 0
@@ -302,7 +305,7 @@ frappe.pages['amt-hod-dashboard'].on_page_load = function(wrapper) {
                     style="cursor:pointer;border-bottom:1px solid #f0f0f0;"
                     onmouseover="this.style.background='#f5f6fa'"
                     onmouseout="this.style.background=''">
-                    <td style="padding:7px 10px;font-weight:600;color:${BLUE};font-size:12px;">${f.nav_ref}</td>
+                    <td style="padding:7px 10px;font-weight:600;color:${BLUE};font-size:12px;">${f.nav_ref || f.navision_ref || f.name}</td>
                     <td style="padding:7px 10px;font-size:12px;">${f.client}</td>
                     <td style="padding:7px 10px;font-size:11px;color:#666;">${f.freight}</td>
                     <td style="padding:7px 10px;font-size:11px;">${f.agent}</td>
@@ -381,7 +384,7 @@ frappe.pages['amt-hod-dashboard'].on_page_load = function(wrapper) {
             style="cursor:pointer;border-bottom:1px solid #f0f0f0;"
             onmouseover="this.style.background='#f5f6fa'"
             onmouseout="this.style.background=''">
-            <td style="padding:7px 10px;font-weight:600;color:${BLUE};font-size:12px;">${f.nav_ref}</td>
+            <td style="padding:7px 10px;font-weight:600;color:${BLUE};font-size:12px;">${f.nav_ref || f.navision_ref || f.name}</td>
             <td style="padding:7px 10px;font-size:12px;">${f.client}</td>
             <td style="padding:7px 10px;font-size:11px;color:#666;">${f.freight || ''}</td>
             <td style="padding:7px 10px;font-size:11px;">${f.agent || '<span style="color:red;">⚠ Unassigned</span>'}</td>
