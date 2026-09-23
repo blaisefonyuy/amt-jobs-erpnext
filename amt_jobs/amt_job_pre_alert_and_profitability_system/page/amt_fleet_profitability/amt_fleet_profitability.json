@@ -1,0 +1,16 @@
+{
+ "creation": "2026-09-01 00:00:00",
+ "doctype": "Page",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "amt-fleet-profitability",
+ "page_name": "amt-fleet-profitability",
+ "roles": [
+  {"role": "Garage Chief"},
+  {"role": "AMT Director of Operations"},
+  {"role": "AMT Director General"},
+  {"role": "AMT Finance"},
+  {"role": "System Manager"}
+ ],
+ "standard": "Yes",
+ "title": "Fleet Profitability"
+}
