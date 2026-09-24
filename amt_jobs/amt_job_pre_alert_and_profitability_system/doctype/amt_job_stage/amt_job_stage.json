@@ -52,7 +52,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Cycle",
-   "options": "\nPhase 1 \u2014 Operations\nPhase 2 \u2014 Delivery\nPhase 3 \u2014 Invoicing\nPhase 4 \u2014 Recovery",
+   "options": "\nPhase 1 — Operations\nPhase 2 — Delivery\nPhase 2 — Logistics\nPhase 3 — Invoicing\nPhase 4 — Recovery",
    "read_only": 1
   },
   {

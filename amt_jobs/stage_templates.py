@@ -16,22 +16,22 @@
 
 LOGISTICS_STAGES = [
     # L1 — HOD assigns logistics coordinator
-    ("L1", "Logistics Coordinator Assigned",    "Phase 2 — Logistics", "AMT Head of Air Freight",       0, 1, 2,  ""),
-    ("L2", "Vehicle / Truck Requested",         "Phase 2 — Logistics", "AMT Logistics Coordinator",     0, 1, 2,  ""),
-    ("L3", "Vehicle Dispatched to Pickup",      "Phase 2 — Logistics", "AMT Logistics Coordinator",     0, 1, 2,  ""),
-    ("L4", "Cargo Picked Up",                   "Phase 2 — Logistics", "AMT Logistics Coordinator",     1, 1, 2,  ""),
-    ("L5", "Delivery Note Signed by Client",    "Phase 2 — Logistics", "AMT Logistics Coordinator",     1, 1, 2,  ""),
+    ("L1", "Logistics Coordinator Assigned",    "Phase 2 — Delivery", "AMT Head of Air Freight",       0, 1, 2,  ""),
+    ("L2", "Vehicle / Truck Requested",         "Phase 2 — Delivery", "AMT Logistics Coordinator",     0, 1, 2,  ""),
+    ("L3", "Vehicle Dispatched to Pickup",      "Phase 2 — Delivery", "AMT Logistics Coordinator",     0, 1, 2,  ""),
+    ("L4", "Cargo Picked Up",                   "Phase 2 — Delivery", "AMT Logistics Coordinator",     1, 1, 2,  ""),
+    ("L5", "Delivery Note Signed by Client",    "Phase 2 — Delivery", "AMT Logistics Coordinator",     1, 1, 2,  ""),
     # L6 — only for container jobs
-    ("L6", "Empty Container Returned",          "Phase 2 — Logistics", "AMT Logistics Coordinator",     1, 2, 5,  ""),
+    ("L6", "Empty Container Returned",          "Phase 2 — Delivery", "AMT Logistics Coordinator",     1, 2, 5,  ""),
 ]
 
 LOGISTICS_SEA_STAGES = [
-    ("L1", "Logistics Coordinator Assigned",    "Phase 2 — Logistics", "AMT Head of Sea Freight",       0, 1, 2,  ""),
-    ("L2", "Vehicle / Truck Requested",         "Phase 2 — Logistics", "AMT Logistics Coordinator",     0, 1, 2,  ""),
-    ("L3", "Vehicle Dispatched to Pickup",      "Phase 2 — Logistics", "AMT Logistics Coordinator",     0, 1, 2,  ""),
-    ("L4", "Cargo Picked Up",                   "Phase 2 — Logistics", "AMT Logistics Coordinator",     1, 1, 2,  ""),
-    ("L5", "Delivery Note Signed by Client",    "Phase 2 — Logistics", "AMT Logistics Coordinator",     1, 1, 2,  ""),
-    ("L6", "Empty Container Returned",          "Phase 2 — Logistics", "AMT Logistics Coordinator",     1, 2, 5,  ""),
+    ("L1", "Logistics Coordinator Assigned",    "Phase 2 — Delivery", "AMT Head of Sea Freight",       0, 1, 2,  ""),
+    ("L2", "Vehicle / Truck Requested",         "Phase 2 — Delivery", "AMT Logistics Coordinator",     0, 1, 2,  ""),
+    ("L3", "Vehicle Dispatched to Pickup",      "Phase 2 — Delivery", "AMT Logistics Coordinator",     0, 1, 2,  ""),
+    ("L4", "Cargo Picked Up",                   "Phase 2 — Delivery", "AMT Logistics Coordinator",     1, 1, 2,  ""),
+    ("L5", "Delivery Note Signed by Client",    "Phase 2 — Delivery", "AMT Logistics Coordinator",     1, 1, 2,  ""),
+    ("L6", "Empty Container Returned",          "Phase 2 — Delivery", "AMT Logistics Coordinator",     1, 2, 5,  ""),
 ]
 
 # ── FINANCE STAGES ───────────────────────────────────────────────────────────

@@ -130,7 +130,7 @@
   {
    "fieldname": "sec_identity",
    "fieldtype": "Section Break",
-   "label": "\ud83d\udccb Job Identity"
+   "label": "📋 Job Identity"
   },
   {
    "bold": 1,
@@ -222,14 +222,14 @@
   {
    "fieldname": "sec_ops",
    "fieldtype": "Section Break",
-   "label": "\u2699\ufe0f Operations"
+   "label": "⚙️ Operations"
   },
   {
    "bold": 1,
-   "description": "Enter the exact date the job alert email arrived \u2014 this starts all clocks",
+   "description": "Enter the exact date the job alert email arrived — this starts all clocks",
    "fieldname": "date_ot_received",
    "fieldtype": "Date",
-   "label": "\ud83d\udcc5 Date OT / Job Alert Received"
+   "label": "📅 Date OT / Job Alert Received"
   },
   {
    "description": "Required before Stage 1 can be marked complete",
@@ -262,7 +262,7 @@
   {
    "fieldname": "sec_deadlines",
    "fieldtype": "Section Break",
-   "label": "\u23f1\ufe0f Deadline Clocks"
+   "label": "⏱️ Deadline Clocks"
   },
   {
    "fieldname": "sla_deadline",
@@ -299,7 +299,7 @@
   },
   {
    "depends_on": "eval:doc.demurrage_applicable==1",
-   "description": "Vessel arrival or container discharge \u2014 confirm with Operations",
+   "description": "Vessel arrival or container discharge — confirm with Operations",
    "fieldname": "demurrage_free_period_start",
    "fieldtype": "Date",
    "label": "Free Period Start (Port/Line)"
@@ -348,15 +348,15 @@
    "collapsible": 1,
    "fieldname": "sec_margin",
    "fieldtype": "Section Break",
-   "label": "\ud83d\udcb0 Margin \u2014 Forecast vs Actual"
+   "label": "💰 Margin — Forecast vs Actual"
   },
   {
    "fieldname": "html_margin_note",
    "fieldtype": "HTML",
-   "options": "<div style=\"background:#fff4e0;border-left:4px solid #f59e0b;padding:8px 12px;margin-bottom:8px;font-size:12px;border-radius:4px;\"><b>\ud83d\udccc Forecast</b> is editable until you submit this file. Once submitted it is <b>locked permanently</b>. Actuals are read from Navision automatically.</div>"
+   "options": "<div style=\"background:#fff4e0;border-left:4px solid #f59e0b;padding:8px 12px;margin-bottom:8px;font-size:12px;border-radius:4px;\"><b>📌 Forecast</b> is editable until you submit this file. Once submitted it is <b>locked permanently</b>. Actuals are read from Navision automatically.</div>"
   },
   {
-   "description": "Enter before submitting \u2014 locked on submit",
+   "description": "Enter before submitting — locked on submit",
    "fieldname": "forecast_revenue",
    "fieldtype": "Currency",
    "label": "Forecast Revenue (XAF)"
@@ -454,7 +454,7 @@
    "fieldname": "margin_gate_status",
    "fieldtype": "Select",
    "label": "Margin Gate",
-   "options": "OK\nFlagged \u2014 reason required\nBlocked \u2014 Director review",
+   "options": "OK\nFlagged — reason required\nBlocked — Director review",
    "read_only": 1
   },
   {
@@ -462,7 +462,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval:['Flagged \u2014 reason required','Blocked \u2014 Director review'].includes(doc.margin_gate_status)",
+   "depends_on": "eval:['Flagged — reason required','Blocked — Director review'].includes(doc.margin_gate_status)",
    "fieldname": "margin_variance_reason",
    "fieldtype": "Select",
    "label": "Reason for Margin Gap",
@@ -472,7 +472,7 @@
    "collapsible": 1,
    "fieldname": "sec_nas",
    "fieldtype": "Section Break",
-   "label": "\ud83d\udcc1 NAS Storage"
+   "label": "📁 NAS Storage"
   },
   {
    "collapsible": 1,
@@ -484,7 +484,7 @@
   {
    "fieldname": "sec_stages",
    "fieldtype": "Section Break",
-   "label": "\ud83d\udccb Stage Log"
+   "label": "📋 Stage Log"
   },
   {
    "fieldname": "stage_log",
@@ -502,7 +502,7 @@
    "read_only": 1
   },
   {
-   "description": "Date vessel/plane actually arrived \u2014 entered by Operations Head. SLA Phase 2 starts from this date.",
+   "description": "Date vessel/plane actually arrived — entered by Operations Head. SLA Phase 2 starts from this date.",
    "fieldname": "arrival_date",
    "fieldtype": "Date",
    "label": "Actual Arrival Date"
@@ -524,7 +524,7 @@
   },
   {
    "default": "2",
-   "description": "Days allowed for pre-arrival phase (Set automatically from freight type \u2014 not editable per file.)",
+   "description": "Days allowed for pre-arrival phase (Set automatically from freight type — not editable per file.)",
    "fieldname": "phase1_sla_days",
    "fieldtype": "Int",
    "hidden": 1,
@@ -533,7 +533,7 @@
   },
   {
    "default": "3",
-   "description": "Days allowed after arrival for delivery (3=Air, 7=Sea) (Set automatically from freight type \u2014 not editable per file.)",
+   "description": "Days allowed after arrival for delivery (3=Air, 7=Sea) (Set automatically from freight type — not editable per file.)",
    "fieldname": "phase2_sla_days",
    "fieldtype": "Int",
    "hidden": 1,
@@ -558,7 +558,7 @@
    "collapsible": 1,
    "fieldname": "sec_transport",
    "fieldtype": "Section Break",
-   "label": "\u2708\ufe0f Transport & Reference Numbers"
+   "label": "✈️ Transport & Reference Numbers"
   },
   {
    "description": "Vessel name or flight number from Navision",
@@ -587,7 +587,7 @@
    "label": "HAWB Number"
   },
   {
-   "description": "Expected arrival date \u2014 agent must fill this when file is created",
+   "description": "Expected arrival date — agent must fill this when file is created",
    "fieldname": "eta",
    "fieldtype": "Date",
    "label": "ETA (Estimated Arrival)"
@@ -617,7 +617,7 @@
    "label": "Customs Declaration No."
   },
   {
-   "description": "Upload arrival notice, manifeste, LTA or BL \u2014 mandatory before arrival date is accepted",
+   "description": "Upload arrival notice, manifeste, LTA or BL — mandatory before arrival date is accepted",
    "fieldname": "arrival_proof",
    "fieldtype": "Attach",
    "label": "Arrival / Departure Proof Document"
@@ -627,10 +627,10 @@
    "fieldname": "sec_finance",
    "fieldtype": "Section Break",
    "hidden": 1,
-   "label": "\ud83d\udcb5 Finance Summary (Legacy)"
+   "label": "💵 Finance Summary (Legacy)"
   },
   {
-   "description": "Amount requested by agent in Stage 5 \u2014 based on Cost & Profit Analysis",
+   "description": "Amount requested by agent in Stage 5 — based on Cost & Profit Analysis",
    "fieldname": "finance_amount_requested",
    "fieldtype": "Currency",
    "hidden": 1,
@@ -671,14 +671,14 @@
    "read_only": 1
   },
   {
-   "description": "Amount agent confirms receiving in hand \u2014 Stage 8",
+   "description": "Amount agent confirms receiving in hand — Stage 8",
    "fieldname": "finance_amount_confirmed",
    "fieldtype": "Currency",
    "hidden": 1,
    "label": "Amount Confirmed by Agent (XAF)"
   },
   {
-   "description": "Auto-calculated \u2014 should be zero. Any difference must be explained.",
+   "description": "Auto-calculated — should be zero. Any difference must be explained.",
    "fieldname": "finance_variance",
    "fieldtype": "Currency",
    "hidden": 1,
@@ -696,7 +696,7 @@
    "fieldname": "sec_stage_progress",
    "fieldtype": "Section Break",
    "hide_border": 1,
-   "label": "\ud83d\udccb Stage Progress"
+   "label": "📋 Stage Progress"
   },
   {
    "default": "0",
@@ -730,7 +730,7 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Current Phase",
-   "options": "\nPhase 1 \u2014 Operations\nPhase 2 \u2014 Delivery\nPhase 3 \u2014 Invoicing\nPhase 4 \u2014 Recovery\nComplete",
+   "options": "\nPhase 1 — Operations\nPhase 2 — Delivery\nPhase 3 — Invoicing\nPhase 4 — Recovery\nComplete",
    "read_only": 1
   },
   {
@@ -747,7 +747,7 @@
    "label": "Stage History Display"
   },
   {
-   "description": "Select a Customs Agent \u2014 only Customs HOD can assign",
+   "description": "Select a Customs Agent — only Customs HOD can assign",
    "fieldname": "customs_agent",
    "fieldtype": "Link",
    "label": "Customs Agent Assigned",
@@ -756,7 +756,7 @@
   {
    "fieldname": "sec_finance_requests",
    "fieldtype": "Section Break",
-   "label": "\ud83d\udcb5 Finance Requests"
+   "label": "💵 Finance Requests"
   },
   {
    "fieldname": "finance_requests",
@@ -856,7 +856,7 @@
   },
   {
    "default": "0",
-   "description": "Check if job involves containers \u2014 adds Empty Container Return stage",
+   "description": "Check if job involves containers — adds Empty Container Return stage",
    "fieldname": "has_containers",
    "fieldtype": "Check",
    "label": "Has Containers"
