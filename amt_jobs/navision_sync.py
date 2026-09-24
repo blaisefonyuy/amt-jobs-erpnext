@@ -396,3 +396,64 @@ def on_submit(doc, method=None):
         "forecast_locked_by": frappe.session.user,
     })
     frappe.msgprint("Forecast locked and cannot be changed.", indicator="green", alert=True)
+
+
+@frappe.whitelist()
+def sync_specific_jobs(job_nos):
+    """Sync specific job numbers from Navision"""
+    if isinstance(job_nos, str):
+        job_nos = [j.strip() for j in job_nos.split(',')]
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    placeholders = ','.join(['?' for _ in job_nos])
+    sql = ("SELECT RTRIM(j.[No_]) AS job_number, "
+           "RTRIM(ISNULL(j.[Description],'')) AS job_title, "
+           "RTRIM(ISNULL(j.[Bill-to Customer No_],'')) AS client_code, "
+           "RTRIM(ISNULL(j.[Bill-to Name],'')) AS client_name, "
+           "CONVERT(varchar(10),j.[Creation Date],23) AS date_created, "
+           "j.[Status] AS status_int, "
+           "RTRIM(ISNULL(j.[Job Status],'')) AS job_status_text, "
+           "RTRIM(ISNULL(j.[Job Creator],'')) AS job_creator, "
+           "RTRIM(ISNULL(j.[Vessel],'')) AS vessel, "
+           "RTRIM(ISNULL(j.[MAWB],'')) AS mawb, "
+           "RTRIM(ISNULL(j.[HAWB],'')) AS hawb, "
+           "RTRIM(ISNULL(j.[BL],'')) AS bl, "
+           "RTRIM(ISNULL(j.[Flight No_],'')) AS flight_no, "
+           "RTRIM(ISNULL(j.[Origin Code],'')) AS origin_code, "
+           "RTRIM(ISNULL(j.[Destination Code],'')) AS dest_code, "
+           "RTRIM(ISNULL(j.[Dossier Agent],'')) AS dossier_agent, "
+           "CASE WHEN j.[ATA]>'1900-01-01' THEN CONVERT(varchar(10),j.[ATA],23) ELSE NULL END AS ata, "
+           "CASE WHEN j.[ETA]>'1900-01-01' THEN CONVERT(varchar(10),j.[ETA],23) ELSE NULL END AS eta_nav, "
+           "CASE WHEN j.[Closing Date]>'1900-01-01' THEN CONVERT(varchar(10),j.[Closing Date],23) ELSE NULL END AS closing_date, "
+           "CASE WHEN j.[Customs Declaration]>'1900-01-01' THEN CONVERT(varchar(10),j.[Customs Declaration],23) ELSE NULL END AS customs_declaration "
+           "FROM [dbo].[AMT_CM$Job] j "
+           f"WHERE j.[No_] IN ({placeholders})")
+
+    cur.execute(sql, job_nos)
+    cols = [c[0] for c in cur.description]
+    rows = cur.fetchall()
+    jobs = [dict(zip(cols, r)) for r in rows]
+
+    marc = bulk_fetch_marchandises(conn, job_nos)
+
+    synced = []
+    errors = []
+    for j in jobs:
+        job_no = j['job_number']
+        j.update(marc.get(job_no, {}))
+        try:
+            upsert_job_file(j, {})
+            synced.append(job_no)
+        except Exception as e:
+            errors.append(f"{job_no}: {str(e)[:80]}")
+
+    frappe.db.commit()
+    conn.close()
+
+    return {
+        "synced": synced,
+        "errors": errors,
+        "total": len(jobs),
+    }
