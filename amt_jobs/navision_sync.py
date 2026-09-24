@@ -457,3 +457,15 @@ def sync_specific_jobs(job_nos):
         "errors": errors,
         "total": len(jobs),
     }
+
+
+@frappe.whitelist()
+def sync_single_job(job_no):
+    """Sync a single job by number — callable from Job File form button"""
+    result = sync_specific_jobs(job_no.strip())
+    if result['synced']:
+        return {"status": "success", "message": f"Job {job_no} synced successfully"}
+    elif result['errors']:
+        return {"status": "error", "message": result['errors'][0]}
+    else:
+        return {"status": "not_found", "message": f"Job {job_no} not found in Navision"}
