@@ -67,13 +67,13 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
             frappe.db.get_single_value('Garage Settings', 'diesel_price'),
             frappe.db.get_single_value('Garage Settings', 'super_price'),
             frappe.call({method: 'frappe.client.get_count',
-                args: {doctype: 'Asset', filters: {custom_log_mat_category: ['!=','']}}}),
+                args: {doctype: 'Fleet Equipment', filters: {category: ['!=','']}}}),
             frappe.call({method: 'frappe.client.get_list',
                 args: {doctype: 'Maintenance Log', fields: ['equipment','service_type','next_service_date','total_cost'],
                        filters: {}, limit: 5, order_by: 'next_service_date asc'}}),
             frappe.call({method: 'frappe.client.get_list',
                 args: {doctype: 'Equipment Expense Request',
-                       fields: ['equipment','request_type','amount_requested','status'],
+                       fields: ['name','equipment','request_type','amount_requested','status'],
                        filters: {status: ['in', ['Pending Purchase Review','Pending DOO Approval','EER Approved']]},
                        limit: 10}}),
             frappe.call({method: 'frappe.client.get_list',
@@ -111,14 +111,14 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         });
 
         const diesel_consumed = month_logs.filter(l=>l.fuel_type==='Diesel')
-            .reduce((a,l)=>a+frappe.utils.flt(l.consumption_liters),0);
+            .reduce((a,l)=>a+parseFloat(l.consumption_liters),0);
         const super_consumed = month_logs.filter(l=>l.fuel_type==='Super (Petrol)')
-            .reduce((a,l)=>a+frappe.utils.flt(l.consumption_liters),0);
+            .reduce((a,l)=>a+parseFloat(l.consumption_liters),0);
         const kero_consumed = month_logs.filter(l=>l.fuel_type==='Kerosene')
-            .reduce((a,l)=>a+frappe.utils.flt(l.consumption_liters),0);
-        const total_fuel_cost = month_logs.reduce((a,l)=>a+frappe.utils.flt(l.fuel_cost),0);
+            .reduce((a,l)=>a+parseFloat(l.consumption_liters),0);
+        const total_fuel_cost = month_logs.reduce((a,l)=>a+parseFloat(l.fuel_cost),0);
 
-        const pending_amount = d.pending_exp.reduce((a,e)=>a+frappe.utils.flt(e.amount_requested),0);
+        const pending_amount = d.pending_exp.reduce((a,e)=>a+parseFloat(e.amount_requested),0);
 
         const today = frappe.datetime.get_today();
         const services_due = d.maintenance.filter(m =>
@@ -213,7 +213,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
                         style="cursor:pointer;border-bottom:1px solid #f0f0f0;"
                         onmouseover="this.style.background='#f5f6fa'"
                         onmouseout="this.style.background=''">
-                        <td style="padding:7px 12px;font-size:12px;font-weight:600;color:${BLUE};">${e.name}</td>
+                        <td style="padding:7px 12px;font-size:12px;font-weight:600;color:${BLUE};">${e.name || ""}</td>
                         <td style="padding:7px 12px;font-size:12px;">${e.equipment || ''}</td>
                         <td style="padding:7px 12px;font-size:12px;">${e.request_type || ''}</td>
                         <td style="padding:7px 12px;font-size:12px;text-align:right;">${fmt_xaf(e.amount_requested)}</td>

@@ -74,15 +74,15 @@ frappe.pages['amt-fleet-profitability'].on_page_load = function(wrapper) {
         const [date_from, date_to] = get_date_range(period);
 
         // Build asset filter
-        let asset_filter = {custom_log_mat_category: ['!=','']};
+        let asset_filter = {category: ['!=','']};
         if(category !== 'All') asset_filter.custom_log_mat_category = category;
 
         Promise.all([
             // Get all equipment
             frappe.call({method:'frappe.client.get_list',
-                args:{doctype:'Asset', fields:['name','asset_name','custom_log_mat_category',
-                    'custom_immatriculation','custom_tracked_by','custom_current_km',
-                    'custom_current_hours','custom_last_service_date','custom_next_service_due'],
+                args:{doctype:'Fleet Equipment', fields:['name','equipment_name','category',
+                    'immatriculation','tracked_by','current_km',
+                    'current_hours','last_service_date','next_service_due'],
                     filters: asset_filter, limit:200}}),
             // Get usage/revenue
             frappe.call({method:'frappe.client.get_list',
@@ -121,14 +121,14 @@ frappe.pages['amt-fleet-profitability'].on_page_load = function(wrapper) {
             assets.forEach(a => {
                 equip_data[a.name] = {
                     name: a.name,
-                    label: a.asset_name || a.name,
-                    category: a.custom_log_mat_category || 'Other',
-                    plate: a.custom_immatriculation || '',
-                    tracked_by: a.custom_tracked_by || '',
-                    current_km: a.custom_current_km || 0,
-                    current_hours: a.custom_current_hours || 0,
-                    last_service: a.custom_last_service_date || '',
-                    next_service: a.custom_next_service_due || '',
+                    label: a.equipment_name || a.name,
+                    category: a.category || 'Other',
+                    plate: a.immatriculation || '',
+                    tracked_by: a.tracked_by || '',
+                    current_km: a.current_km || 0,
+                    current_hours: a.current_hours || 0,
+                    last_service: a.last_service_date || '',
+                    next_service: a.next_service_due || '',
                     revenue: 0, usage_qty: 0,
                     maint_cost: 0, fuel_cost: 0, other_cost: 0,
                     monthly: {},
@@ -138,38 +138,38 @@ frappe.pages['amt-fleet-profitability'].on_page_load = function(wrapper) {
             // Aggregate revenue
             usage.forEach(u => {
                 if(!equip_data[u.equipment]) return;
-                equip_data[u.equipment].revenue += frappe.utils.flt(u.amount);
-                equip_data[u.equipment].usage_qty += frappe.utils.flt(u.quantity);
+                equip_data[u.equipment].revenue += parseFloat(u.amount);
+                equip_data[u.equipment].usage_qty += parseFloat(u.quantity);
                 const mon = (u.date||'').substr(0,7);
                 if(!equip_data[u.equipment].monthly[mon])
                     equip_data[u.equipment].monthly[mon] = {rev:0,cost:0};
-                equip_data[u.equipment].monthly[mon].rev += frappe.utils.flt(u.amount);
+                equip_data[u.equipment].monthly[mon].rev += parseFloat(u.amount);
             });
 
             // Aggregate maintenance cost
             maint.forEach(m => {
                 if(!equip_data[m.equipment]) return;
-                equip_data[m.equipment].maint_cost += frappe.utils.flt(m.total_cost);
+                equip_data[m.equipment].maint_cost += parseFloat(m.total_cost);
                 const mon = (m.date||'').substr(0,7);
                 if(!equip_data[m.equipment].monthly[mon])
                     equip_data[m.equipment].monthly[mon] = {rev:0,cost:0};
-                equip_data[m.equipment].monthly[mon].cost += frappe.utils.flt(m.total_cost);
+                equip_data[m.equipment].monthly[mon].cost += parseFloat(m.total_cost);
             });
 
             // Aggregate fuel cost
             fuel.forEach(f => {
                 if(!equip_data[f.equipment]) return;
-                equip_data[f.equipment].fuel_cost += frappe.utils.flt(f.fuel_cost);
+                equip_data[f.equipment].fuel_cost += parseFloat(f.fuel_cost);
                 const mon = (f.date||'').substr(0,7);
                 if(!equip_data[f.equipment].monthly[mon])
                     equip_data[f.equipment].monthly[mon] = {rev:0,cost:0};
-                equip_data[f.equipment].monthly[mon].cost += frappe.utils.flt(f.fuel_cost);
+                equip_data[f.equipment].monthly[mon].cost += parseFloat(f.fuel_cost);
             });
 
             // Aggregate other expenses
             expenses.forEach(e => {
                 if(!equip_data[e.equipment]) return;
-                equip_data[e.equipment].other_cost += frappe.utils.flt(e.amount_requested);
+                equip_data[e.equipment].other_cost += parseFloat(e.amount_requested);
             });
 
             // Calculate totals
