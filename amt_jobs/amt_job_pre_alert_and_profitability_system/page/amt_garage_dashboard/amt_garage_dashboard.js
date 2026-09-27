@@ -78,8 +78,8 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
                        limit: 10}}),
             frappe.call({method: 'frappe.client.get_list',
                 args: {doctype: 'Fuel Consumption Log',
-                       fields: ['fuel_type','consumption_liters','fuel_cost','equipment','date'],
-                       filters: {}, limit: 100}}),
+                       fields: ['fuel_type','fuel_source','consumption_liters','fuel_cost','equipment','date','name'],
+                       filters: {docstatus: ['!=', 2]}, limit: 500}}),
         ]).then(results => {
             const [diesel_level, diesel_cap, super_level, super_cap,
                    kero_level, kero_cap, diesel_price, super_price,
@@ -192,6 +192,10 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
             </div>
         </div>
 
+
+        <!-- FUEL CONSUMPTION TABLE - populated by JS -->
+        <div id="fuel-consumption-section"></div>
+
         <!-- PENDING EXPENSE REQUESTS -->
         ${d.pending_exp.length > 0 ? `
         <div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;margin-bottom:16px;overflow:hidden;">
@@ -273,6 +277,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         $('#garage-content').html(html);
         $('#garage-loading').hide();
         $('#garage-content').show();
+
     }
 
     window.show_services_due = function() {
@@ -280,6 +285,55 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
             next_service_date: ['<=', frappe.datetime.add_days(frappe.datetime.get_today(), 7)]
         });
     };
+
+    function render_fuel_table(logs) {
+        var now = new Date();
+        var month_logs = logs.filter(function(l) {
+            var d = new Date(l.date);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+        if (!month_logs.length) return;
+
+        var html = '<div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;margin-bottom:16px;overflow:hidden;">';
+        html += '<div style="background:#17475E;padding:12px 16px;"><span style="color:#fff;font-weight:700;font-size:14px;">⛽ Fuel Consumption This Month</span></div>';
+        html += '<table style="width:100%;border-collapse:collapse;">';
+        html += '<thead><tr style="background:#f5f6fa;">';
+        html += '<th style="padding:7px 12px;text-align:left;font-size:11px;">Date</th>';
+        html += '<th style="padding:7px 12px;text-align:left;font-size:11px;">Equipment</th>';
+        html += '<th style="padding:7px 12px;text-align:center;font-size:11px;">Type</th>';
+        html += '<th style="padding:7px 12px;text-align:center;font-size:11px;">Source</th>';
+        html += '<th style="padding:7px 12px;text-align:right;font-size:11px;">Liters</th>';
+        html += '<th style="padding:7px 12px;text-align:right;font-size:11px;">Cost (XAF)</th>';
+        html += '</tr></thead><tbody>';
+
+        var total_liters = 0, total_cost = 0;
+        for (var i = 0; i < month_logs.length; i++) {
+            var l = month_logs[i];
+            var liters = parseFloat(l.consumption_liters || 0);
+            var cost = parseFloat(l.fuel_cost || 0);
+            total_liters += liters;
+            total_cost += cost;
+            var bg = i % 2 === 0 ? '#fff' : '#fafafa';
+            var src_label = l.fuel_source === 'Internal Tank' ? 'Internal' : 'External';
+            var src_color = l.fuel_source === 'Internal Tank' ? '#1E6B3C' : '#C9A227';
+            html += '<tr style="background:' + bg + ';border-bottom:1px solid #f0f0f0;">';
+            html += '<td style="padding:6px 12px;font-size:11px;">' + (l.date || '') + '</td>';
+            html += '<td style="padding:6px 12px;font-size:11px;font-weight:600;">' + (l.equipment || '') + '</td>';
+            html += '<td style="padding:6px 12px;text-align:center;font-size:11px;">' + (l.fuel_type || '') + '</td>';
+            html += '<td style="padding:6px 12px;text-align:center;"><span style="color:' + src_color + ';font-size:10px;font-weight:600;">' + src_label + '</span></td>';
+            html += '<td style="padding:6px 12px;text-align:right;font-size:11px;font-weight:600;">' + liters.toFixed(0) + ' L</td>';
+            html += '<td style="padding:6px 12px;text-align:right;font-size:11px;">' + fmt_xaf(cost) + ' XAF</td>';
+            html += '</tr>';
+        }
+
+        html += '</tbody><tfoot><tr style="background:#1F3864;color:#fff;">';
+        html += '<td colspan="4" style="padding:7px 12px;font-size:11px;font-weight:700;">Total</td>';
+        html += '<td style="padding:7px 12px;text-align:right;font-size:11px;font-weight:700;">' + total_liters.toFixed(0) + ' L</td>';
+        html += '<td style="padding:7px 12px;text-align:right;font-size:11px;font-weight:700;">' + fmt_xaf(total_cost) + ' XAF</td>';
+        html += '</tr></tfoot></table></div>';
+
+        document.getElementById('fuel-consumption-section').innerHTML = html;
+    }
 
     load();
 };
