@@ -1,0 +1,107 @@
+{
+ "charts": [],
+ "content": "[{\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\ud83d\\udcca Garage Dashboard\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\ud83d\\udcc8 Fleet Profitability\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\ud83d\\ude9b Fleet Equipment\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\u26fd Fuel Consumption Log\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\ud83d\\udd27 Maintenance Log\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\ud83d\\udcb0 Expense Request\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\ud83d\\udccb Job Request\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\ud83d\\udcca Equipment Usage Log\", \"col\": 3}}, {\"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"\\u2699\\ufe0f Garage Settings\", \"col\": 3}}]",
+ "creation": "2026-09-23 18:08:36.121949",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "AMT Garage",
+ "links": [],
+ "modified": "2026-09-27 15:00:49.203812",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "AMT Garage",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "Garage Staff"
+  },
+  {
+   "role": "Fuel Agent"
+  },
+  {
+   "role": "Purchase Officer"
+  },
+  {
+   "role": "Garage Chief"
+  },
+  {
+   "role": "AMT Director of Operations"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "AMT Director General"
+  },
+  {
+   "role": "AMT Finance"
+  }
+ ],
+ "sequence_id": 11.0,
+ "shortcuts": [
+  {
+   "doc_view": "",
+   "label": "\ud83d\udcca Garage Dashboard",
+   "link_to": "amt-garage-dashboard",
+   "type": "Page"
+  },
+  {
+   "doc_view": "",
+   "label": "\ud83d\udcc8 Fleet Profitability",
+   "link_to": "amt-fleet-profitability",
+   "type": "Page"
+  },
+  {
+   "doc_view": "",
+   "label": "\ud83d\ude9b Fleet Equipment",
+   "link_to": "Fleet Equipment",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "\u26fd Fuel Consumption Log",
+   "link_to": "Fuel Consumption Log",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "\ud83d\udd27 Maintenance Log",
+   "link_to": "Maintenance Log",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "\ud83d\udcb0 Expense Request",
+   "link_to": "Equipment Expense Request",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "\ud83d\udccb Job Request",
+   "link_to": "Job Request",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "\ud83d\udcca Equipment Usage Log",
+   "link_to": "Equipment Usage Log",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "\u2699\ufe0f Garage Settings",
+   "link_to": "Garage Settings",
+   "type": "DocType"
+  }
+ ],
+ "title": "AMT Garage"
+}
