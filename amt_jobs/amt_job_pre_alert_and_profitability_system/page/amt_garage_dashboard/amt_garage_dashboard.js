@@ -277,6 +277,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         $('#garage-content').html(html);
         $('#garage-loading').hide();
         $('#garage-content').show();
+        render_fuel_table(d.fuel_logs || []);
 
     }
 
