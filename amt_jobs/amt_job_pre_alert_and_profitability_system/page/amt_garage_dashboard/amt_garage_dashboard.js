@@ -69,8 +69,11 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
             frappe.call({method: 'frappe.client.get_count',
                 args: {doctype: 'Fleet Equipment', filters: {category: ['!=','']}}}),
             frappe.call({method: 'frappe.client.get_list',
-                args: {doctype: 'Maintenance Log', fields: ['equipment','service_type','next_service_date','total_cost'],
-                       filters: {}, limit: 5, order_by: 'next_service_date asc'}}),
+                args: {doctype: 'Maintenance Log', fields: ['name','equipment','service_type','next_service_date','total_cost','docstatus'],
+                       filters: {docstatus: 0}, limit: 10, order_by: 'next_service_date asc'}}),
+            frappe.call({method: 'frappe.client.get_list',
+                args: {doctype: 'Maintenance Log', fields: ['name','equipment','service_type','date','total_cost'],
+                       filters: {docstatus: 1}, limit: 20, order_by: 'date desc'}}),
             frappe.call({method: 'frappe.client.get_list',
                 args: {doctype: 'Equipment Expense Request',
                        fields: ['name','equipment','request_type','amount_requested','status'],
@@ -83,7 +86,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         ]).then(results => {
             const [diesel_level, diesel_cap, super_level, super_cap,
                    kero_level, kero_cap, diesel_price, super_price,
-                   total_equip, maintenance, pending_expenses, fuel_logs] = results;
+                   total_equip, maintenance, maint_done, pending_expenses, fuel_logs] = results;
 
             render({
                 diesel_level: diesel_level || 0,
@@ -96,6 +99,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
                 super_price:  super_price  || 900,
                 total_equip:  total_equip?.message || 0,
                 maintenance:  maintenance?.message || [],
+                maint_done:   maint_done?.message || [],
                 pending_exp:  pending_expenses?.message || [],
                 fuel_logs:    fuel_logs?.message || [],
             });
@@ -274,7 +278,35 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         </div>` : ''}
         `;
 
-        $('#garage-content').html(html);
+
+        // Completed Maintenance Section
+        if (d.maint_done && d.maint_done.length > 0) {
+            var total_maint_cost = d.maint_done.reduce(function(s,m){ return s + (parseFloat(m.total_cost)||0); }, 0);
+            html += '<div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;overflow:hidden;margin-top:16px;">';
+            html += '<div style="background:#1E6B3C;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">';
+            html += '<span style="color:#fff;font-weight:700;font-size:14px;">✅ Completed Maintenance</span>';
+            html += '<span style="color:rgba(255,255,255,0.8);font-size:12px;">Total: ' + fmt_xaf(total_maint_cost) + ' XAF</span>';
+            html += '</div>';
+            html += '<table style="width:100%;border-collapse:collapse;">';
+            html += '<thead><tr style="background:#f5f6fa;">';
+            html += '<th style="padding:8px 12px;text-align:left;font-size:11px;">Equipment</th>';
+            html += '<th style="padding:8px 12px;text-align:left;font-size:11px;">Service Type</th>';
+            html += '<th style="padding:8px 12px;text-align:center;font-size:11px;">Date</th>';
+            html += '<th style="padding:8px 12px;text-align:right;font-size:11px;">Cost (XAF)</th>';
+            html += '</tr></thead><tbody>';
+            d.maint_done.forEach(function(m) {
+                html += '<tr onclick="frappe.set_route(\'Form\',\'Maintenance Log\',\'' + m.name + '\')" style="cursor:pointer;border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background=\'#f5f6fa\'" onmouseout="this.style.background=\'\'">'; 
+                html += '<td style="padding:7px 12px;font-size:12px;font-weight:600;">' + (m.equipment||'') + '</td>';
+                html += '<td style="padding:7px 12px;font-size:12px;">' + (m.service_type||'') + '</td>';
+                html += '<td style="padding:7px 12px;font-size:12px;text-align:center;">' + (m.date||'—') + '</td>';
+                html += '<td style="padding:7px 12px;font-size:12px;text-align:right;font-weight:600;color:#1E6B3C;">' + fmt_xaf(m.total_cost) + ' XAF</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+        }
+
+
+                $('#garage-content').html(html);
         $('#garage-loading').hide();
         $('#garage-content').show();
         render_fuel_table(d.fuel_logs || []);
@@ -282,6 +314,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
     }
 
     window.show_services_due = function() {
+        
         frappe.set_route('List', 'Maintenance Log', {
             next_service_date: ['<=', frappe.datetime.add_days(frappe.datetime.get_today(), 7)]
         });
