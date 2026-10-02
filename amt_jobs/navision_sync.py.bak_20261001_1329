@@ -350,17 +350,10 @@ def sync_navision_dates():
         marchandises_map  = bulk_fetch_marchandises(conn, all_job_nos)
         frappe.logger().info(f"[Navision Sync] Got actuals for {len(actuals_map)}, marchandises for {len(marchandises_map)} jobs")
 
-        from amt_jobs import nav_official
-        _v2 = nav_official.enabled() and not frappe.flags.get("amt_full_sync")
-        _hashes = nav_official.load_hashes() if _v2 else {}
-        skipped = 0
         for j in jobs:
             job_no = j.get("job_number", "")
             # Merge bulk data into job dict
             j.update(marchandises_map.get(job_no, {}))
-            if _v2 and nav_official.unchanged(job_no, j, actuals_map.get(job_no), _hashes):
-                skipped += 1
-                continue
             try:
                 existed = frappe.db.exists("AMT Job File", {"navision_job_ref": job_no})
                 actuals = actuals_map.get(job_no, {"actual_revenue": 0.0, "actual_cost": 0.0, "entry_count": 0})
@@ -377,7 +370,6 @@ def sync_navision_dates():
                 frappe.db.commit()
         frappe.db.commit()  # Final commit
         frappe.logger().info(f"[Navision Sync] Done — {created} new, {updated} updated, {errors} errors")
-        print(f"[Navision Sync] Done: {created} new, {updated} updated, {skipped} unchanged (skipped), {errors} errors")
     finally:
         conn.close()
 

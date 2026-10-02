@@ -253,11 +253,11 @@ scheduler_events = {
     # 07:00 UTC = 08:00 Cameroon (WAT)
     # 23:00 UTC = 00:00 Cameroon (midnight)
     "cron": {
-        "0 7 * * *": [
+        "*/15 * * * *": [
             "amt_jobs.navision_sync.sync_now",
         ],
-        "0 23 * * *": [
-            "amt_jobs.navision_sync.sync_now",
+        "50 22 * * *": [
+            "amt_jobs.nav_official.sync_full",
         ],
         # SLA alerts — morning check 08:00 Cameroon
         "0 7 * * *": [
