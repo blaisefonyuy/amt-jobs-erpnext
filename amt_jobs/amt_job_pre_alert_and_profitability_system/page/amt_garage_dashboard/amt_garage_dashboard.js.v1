@@ -1,0 +1,450 @@
+frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
+    const page = frappe.ui.make_app_page({
+        parent: wrapper,
+        title: '🚛 Garage & Fleet Dashboard',
+        single_column: true,
+    });
+
+    page.add_action_item('🔄 Refresh', () => load());
+
+    const $ = window.$;
+    $(wrapper).find('.page-content').html(`
+        <div id="garage-dash" style="padding:16px;font-family:Arial,sans-serif;">
+            <div id="garage-loading" style="text-align:center;padding:60px;color:#888;">
+                <div style="font-size:36px;">⏳</div>
+                <div>Loading dashboard...</div>
+            </div>
+            <div id="garage-content" style="display:none;"></div>
+        </div>
+    `);
+
+    const BLUE  = '#1F3864';
+    const GOLD  = '#C9A227';
+    const GREEN = '#1E6B3C';
+    const RED   = '#C00000';
+    const AMBER = '#C9A227';
+
+    function fmt_xaf(n) {
+        if (!n) return '0';
+        if (n >= 1e6) return (n/1e6).toFixed(2) + ' M';
+        if (n >= 1e3) return (n/1e3).toFixed(0) + ' K';
+        return Math.round(n).toLocaleString();
+    }
+
+    function fuel_bar(level, capacity, label, color) {
+        const pct = capacity > 0 ? Math.min(level/capacity*100, 100) : 0;
+        const bar_color = pct < 20 ? RED : pct < 40 ? AMBER : GREEN;
+        return `<div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="font-weight:600;font-size:12px;">${label}</span>
+                <span style="font-size:12px;color:${bar_color};font-weight:700;">
+                    ${Math.round(level).toLocaleString()} / ${Math.round(capacity).toLocaleString()} L
+                    (${Math.round(pct)}%)
+                </span>
+            </div>
+            <div style="background:#e0e0e0;border-radius:4px;height:16px;overflow:hidden;">
+                <div style="background:${bar_color};width:${pct}%;height:100%;border-radius:4px;
+                    transition:width 0.5s;display:flex;align-items:center;padding-left:6px;">
+                    ${pct > 15 ? `<span style="color:#fff;font-size:10px;font-weight:700;">${Math.round(pct)}%</span>` : ''}
+                </div>
+            </div>
+            ${pct < 20 ? `<div style="color:${RED};font-size:10px;margin-top:2px;">⚠️ Low ${label} — Refill needed</div>` : ''}
+        </div>`;
+    }
+
+    // ---- Diesel containers: levels come from ERPNext stock (item DIESEL) ----
+    function strip_company(wh) {
+        // "Diesel Container C1-01 - AMTCM-PROD" -> "Diesel Container C1-01"
+        wh = wh || '';
+        const i = wh.lastIndexOf(' - ');
+        return i > 0 ? wh.substr(0, i) : wh;
+    }
+    function short_name(wh) {
+        return strip_company(wh).replace(/^Diesel Container /, '');
+    }
+    function section_name(wh) {
+        return strip_company(wh);
+    }
+    function level_color(qty, cap, low) {
+        const pct = cap > 0 ? qty / cap * 100 : 0;
+        if (low) return RED;
+        return pct < 40 ? AMBER : GREEN;
+    }
+    function mini_bar(qty, cap) {
+        const pct = cap > 0 ? Math.max(0, Math.min(qty / cap * 100, 100)) : 0;
+        const color = pct <= 0 ? '#bbb' : pct < 20 ? RED : pct < 40 ? AMBER : GREEN;
+        return '<div style="background:#e0e0e0;border-radius:3px;height:10px;overflow:hidden;">' +
+               '<div style="background:' + color + ';width:' + pct + '%;height:100%;"></div></div>';
+    }
+    window.amt_open_diesel_stock = function(store) {
+        frappe.set_route('query-report', 'Stock Balance', {item_code: 'DIESEL', warehouse: store || ''});
+    };
+
+    function diesel_panel(d, diesel_issued, station_liters) {
+        const s = d.stock;
+        let html = '<div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;margin-bottom:16px;overflow:hidden;">';
+        html += '<div style="background:' + BLUE + ';padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">';
+        html += '<span style="color:#fff;font-weight:700;font-size:14px;">⛽ Internal Diesel — Containers</span>';
+        html += '<span style="color:rgba(255,255,255,0.75);font-size:11px;">Live from stock · item DIESEL</span></div>';
+        html += '<div style="padding:16px;">';
+
+        if (!s || !s.containers || !s.containers.length) {
+            html += '<div style="color:#888;font-size:12px;text-align:center;padding:12px;">' +
+                    'Diesel stock is not set up on this site yet (item DIESEL / Diesel Container warehouses / API script amt_diesel_stock).</div>';
+            html += '</div></div>';
+            return html;
+        }
+
+        const cap = parseFloat(s.capacity) || 1000;
+        let total = 0, value = 0;
+        const sections = {};
+        s.containers.forEach(c => {
+            total += parseFloat(c.qty) || 0;
+            value += parseFloat(c.value) || 0;
+            (sections[c.section] = sections[c.section] || []).push(c);
+        });
+        const total_cap = cap * s.containers.length;
+        const pct = total_cap > 0 ? Math.min(total / total_cap * 100, 100) : 0;
+        const low = total < d.alert_level;
+        const color = level_color(total, total_cap, low);
+        const avg_price = total > 0 ? value / total : 0;
+
+        // Total bar
+        html += '<div style="display:flex;justify-content:space-between;margin-bottom:3px;">';
+        html += '<span style="font-weight:700;font-size:13px;">Diesel — all containers</span>';
+        html += '<span style="font-size:13px;color:' + color + ';font-weight:700;">' +
+                Math.round(total).toLocaleString() + ' / ' + Math.round(total_cap).toLocaleString() + ' L (' + Math.round(pct) + '%)</span></div>';
+        html += '<div style="background:#e0e0e0;border-radius:4px;height:18px;overflow:hidden;">';
+        html += '<div style="background:' + color + ';width:' + pct + '%;height:100%;"></div></div>';
+        if (low) {
+            html += '<div style="color:' + RED + ';font-size:11px;margin-top:3px;">⚠️ Below ' +
+                    Math.round(d.alert_level).toLocaleString() + ' L — order diesel</div>';
+        }
+
+        // Sections and containers
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:14px;">';
+        Object.keys(sections).sort().forEach(sec => {
+            const list = sections[sec].sort((a,b) => a.name < b.name ? -1 : 1);
+            const sec_total = list.reduce((a,c) => a + (parseFloat(c.qty) || 0), 0);
+            const sec_cap = cap * list.length;
+            html += '<div style="border:1px solid #eef0f5;border-radius:6px;padding:10px 12px;">';
+            html += '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">';
+            html += '<span style="font-weight:700;font-size:12px;color:' + BLUE + ';">' + section_name(sec) +
+                    ' <span style="color:#888;font-weight:400;">(' + list.length + ' × ' + Math.round(cap).toLocaleString() + ' L)</span></span>';
+            html += '<span style="font-size:12px;font-weight:700;">' + Math.round(sec_total).toLocaleString() + ' / ' +
+                    Math.round(sec_cap).toLocaleString() + ' L</span></div>';
+            list.forEach(c => {
+                const q = parseFloat(c.qty) || 0;
+                html += '<div style="display:grid;grid-template-columns:52px 1fr 64px;gap:8px;align-items:center;margin-bottom:5px;cursor:pointer;" ' +
+                        'title="' + c.name + '" onclick="amt_open_diesel_stock(\'' + c.name + '\')">';
+                html += '<span style="font-size:11px;font-weight:600;">' + short_name(c.name) + '</span>';
+                html += mini_bar(q, cap);
+                html += '<span style="font-size:11px;text-align:right;color:' + (q <= 0 ? '#999' : '#333') + ';">' +
+                        Math.round(q).toLocaleString() + ' L</span></div>';
+            });
+            html += '</div>';
+        });
+        html += '</div>';
+
+        // Footer
+        html += '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;">';
+        html += '<div style="font-size:11px;color:#666;">Avg price: <b>' + Math.round(avg_price).toLocaleString() + ' XAF/L</b>' +
+                ' · Stock value: <b>' + fmt_xaf(value) + ' XAF</b>' +
+                ' · This month: <b>' + Math.round(diesel_issued).toLocaleString() + ' L</b> issued from containers' +
+                ' · <b>' + Math.round(station_liters).toLocaleString() + ' L</b> bought at stations</div>';
+        html += '<div style="display:flex;gap:6px;">';
+        html += '<button class="btn btn-xs btn-default" onclick="frappe.new_doc(\'Fuel Consumption Log\')">⛽ New Fuel Log</button>';
+        html += '<button class="btn btn-xs btn-default" onclick="frappe.new_doc(\'Purchase Receipt\')">➕ Refill (Purchase Receipt)</button>';
+        html += '<button class="btn btn-xs btn-default" onclick="amt_open_diesel_stock(\'' + (s.store || '') + '\')">📦 Stock Balance</button>';
+        html += '</div></div>';
+
+        html += '</div></div>';
+        return html;
+    }
+
+    function load() {
+        $('#garage-loading').show();
+        $('#garage-content').hide();
+
+        // Fetch data in parallel
+        const month_start = frappe.datetime.get_today().substr(0, 7) + '-01';
+        // Diesel stock per container (API server script "amt_diesel_stock");
+        // resolves to null instead of failing the whole dashboard.
+        const diesel_stock = new Promise(resolve => {
+            frappe.call({
+                method: 'amt_diesel_stock',
+                callback: r => resolve(r.message || null),
+                error: () => resolve(null),
+            });
+        });
+
+        Promise.all([
+            frappe.db.get_single_value('Garage Settings', 'fuel_alert_threshold'),
+            diesel_stock,
+            frappe.call({method: 'frappe.client.get_count',
+                args: {doctype: 'Fleet Equipment', filters: {category: ['!=','']}}}),
+            frappe.call({method: 'frappe.client.get_list',
+                args: {doctype: 'Maintenance Log', fields: ['name','equipment','service_type','next_service_date','total_cost','docstatus'],
+                       filters: {docstatus: 0}, limit: 10, order_by: 'next_service_date asc'}}),
+            frappe.call({method: 'frappe.client.get_list',
+                args: {doctype: 'Maintenance Log', fields: ['name','equipment','service_type','date','total_cost'],
+                       filters: {docstatus: 1}, limit: 20, order_by: 'date desc'}}),
+            frappe.call({method: 'frappe.client.get_list',
+                args: {doctype: 'Equipment Expense Request',
+                       fields: ['name','equipment','request_type','amount_requested','status'],
+                       filters: {status: ['in', ['Pending Purchase Review','Pending DOO Approval','EER Approved']]},
+                       limit: 10}}),
+            // Submitted fuel logs only (drafts have not moved any diesel, cancelled ones were reversed)
+            frappe.call({method: 'frappe.client.get_list',
+                args: {doctype: 'Fuel Consumption Log',
+                       fields: ['fuel_type','fuel_source','consumption_liters','fuel_cost','equipment','date','name','custom_container'],
+                       filters: {docstatus: 1, date: ['>=', month_start]},
+                       order_by: 'date desc', limit: 500, limit_page_length: 500}}),
+        ]).then(results => {
+            const [alert_level, stock, total_equip, maintenance, maint_done,
+                   pending_expenses, fuel_logs] = results;
+
+            render({
+                alert_level:  parseFloat(alert_level) || 500,
+                stock:        stock,
+                total_equip:  total_equip?.message || 0,
+                maintenance:  maintenance?.message || [],
+                maint_done:   maint_done?.message || [],
+                pending_exp:  pending_expenses?.message || [],
+                fuel_logs:    fuel_logs?.message || [],
+            });
+        });
+    }
+
+    function render(d) {
+        // Calculate fuel stats this month
+        const now = new Date();
+        const month_logs = d.fuel_logs.filter(l => {
+            const d_ = new Date(l.date);
+            return d_.getMonth() === now.getMonth() && d_.getFullYear() === now.getFullYear();
+        });
+
+        const diesel_issued = month_logs
+            .filter(l => l.fuel_source === 'Internal Tank' && l.fuel_type === 'Diesel')
+            .reduce((a,l) => a + (parseFloat(l.consumption_liters) || 0), 0);
+        const station_liters = month_logs
+            .filter(l => l.fuel_source !== 'Internal Tank')
+            .reduce((a,l) => a + (parseFloat(l.consumption_liters) || 0), 0);
+        const total_fuel_cost = month_logs.reduce((a,l)=>a+(parseFloat(l.fuel_cost)||0),0);
+
+        const pending_amount = d.pending_exp.reduce((a,e)=>a+(parseFloat(e.amount_requested)||0),0);
+
+        const today = frappe.datetime.get_today();
+        const services_due = d.maintenance.filter(m =>
+            m.next_service_date && m.next_service_date <= frappe.datetime.add_days(today, 7)
+        );
+
+        let html = `
+        <!-- HEADER -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+                <span style="color:${BLUE};font-size:16px;font-weight:700;">Fleet & Garage Overview</span>
+                <span style="color:#888;font-size:12px;margin-left:12px;">As of ${frappe.datetime.get_today()}</span>
+            </div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+            <div style="background:${BLUE};border-radius:8px;padding:16px;text-align:center;">
+                <div style="color:#fff;font-size:28px;font-weight:700;">${d.total_equip}</div>
+                <div style="color:rgba(255,255,255,0.9);font-size:11px;margin-top:4px;">Total Equipment</div>
+            </div>
+            <div style="background:${services_due.length>0?RED:GREEN};border-radius:8px;padding:16px;text-align:center;cursor:pointer;"
+                onclick="show_services_due()">
+                <div style="color:#fff;font-size:28px;font-weight:700;">${services_due.length}</div>
+                <div style="color:rgba(255,255,255,0.9);font-size:11px;margin-top:4px;">Services Due (7 days)</div>
+            </div>
+            <div style="background:${d.pending_exp.length>0?AMBER:GREEN};border-radius:8px;padding:16px;text-align:center;cursor:pointer;"
+                onclick="frappe.set_route('List','Equipment Expense Request',{status:['Pending Purchase Review','Pending DOO Approval']})">
+                <div style="color:#fff;font-size:28px;font-weight:700;">${d.pending_exp.length}</div>
+                <div style="color:rgba(255,255,255,0.9);font-size:11px;margin-top:4px;">Pending Requests</div>
+                <div style="color:rgba(255,255,255,0.8);font-size:10px;">${fmt_xaf(pending_amount)} XAF</div>
+            </div>
+            <div style="background:#17475E;border-radius:8px;padding:16px;text-align:center;">
+                <div style="color:#fff;font-size:28px;font-weight:700;">${fmt_xaf(total_fuel_cost)}</div>
+                <div style="color:rgba(255,255,255,0.9);font-size:11px;margin-top:4px;">Fuel Cost This Month (XAF)</div>
+            </div>
+        </div>
+
+        <!-- DIESEL CONTAINERS (live from stock) -->
+        ${diesel_panel(d, diesel_issued, station_liters)}
+
+        <!-- FUEL CONSUMPTION TABLE - populated by JS -->
+        <div id="fuel-consumption-section"></div>
+
+        <!-- PENDING EXPENSE REQUESTS -->
+        ${d.pending_exp.length > 0 ? `
+        <div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;margin-bottom:16px;overflow:hidden;">
+            <div style="background:${AMBER};padding:12px 16px;">
+                <span style="color:#fff;font-weight:700;font-size:14px;">⏳ Pending Expense Requests</span>
+            </div>
+            <div style="padding:0;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead><tr style="background:#f5f6fa;">
+                        <th style="padding:8px 12px;text-align:left;font-size:11px;">Request</th>
+                        <th style="padding:8px 12px;text-align:left;font-size:11px;">Equipment</th>
+                        <th style="padding:8px 12px;text-align:left;font-size:11px;">Type</th>
+                        <th style="padding:8px 12px;text-align:right;font-size:11px;">Amount (XAF)</th>
+                        <th style="padding:8px 12px;text-align:center;font-size:11px;">Status</th>
+                    </tr></thead>
+                    <tbody>
+                    ${d.pending_exp.map(e => `
+                    <tr onclick="frappe.set_route('Form','Equipment Expense Request','${e.name}')"
+                        style="cursor:pointer;border-bottom:1px solid #f0f0f0;"
+                        onmouseover="this.style.background='#f5f6fa'"
+                        onmouseout="this.style.background=''">
+                        <td style="padding:7px 12px;font-size:12px;font-weight:600;color:${BLUE};">${e.name || ""}</td>
+                        <td style="padding:7px 12px;font-size:12px;">${e.equipment || ''}</td>
+                        <td style="padding:7px 12px;font-size:12px;">${e.request_type || ''}</td>
+                        <td style="padding:7px 12px;font-size:12px;text-align:right;">${fmt_xaf(e.amount_requested)}</td>
+                        <td style="padding:7px 12px;text-align:center;">
+                            <span style="background:${e.status.includes('DOO')?'#C9A227':'#17475E'};
+                                color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;">
+                                ${e.status.replace('EER ','').replace('Pending ','⏳ ')}
+                            </span>
+                        </td>
+                    </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>` : ''}
+
+        <!-- UPCOMING MAINTENANCE -->
+        ${d.maintenance.length > 0 ? `
+        <div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;overflow:hidden;">
+            <div style="background:${services_due.length>0?RED:BLUE};padding:12px 16px;">
+                <span style="color:#fff;font-weight:700;font-size:14px;">🔧 Upcoming Maintenance</span>
+            </div>
+            <div style="padding:0;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead><tr style="background:#f5f6fa;">
+                        <th style="padding:8px 12px;text-align:left;font-size:11px;">Equipment</th>
+                        <th style="padding:8px 12px;text-align:left;font-size:11px;">Service Type</th>
+                        <th style="padding:8px 12px;text-align:center;font-size:11px;">Next Service Due</th>
+                        <th style="padding:8px 12px;text-align:right;font-size:11px;">Last Cost (XAF)</th>
+                    </tr></thead>
+                    <tbody>
+                    ${d.maintenance.map(m => {
+                        const due = m.next_service_date;
+                        const overdue = due && due < today;
+                        const soon = due && due <= frappe.datetime.add_days(today, 7);
+                        const color = overdue ? RED : soon ? AMBER : GREEN;
+                        return `
+                    <tr onclick="frappe.set_route('Form','Maintenance Log','${m.name}')"
+                        style="cursor:pointer;border-bottom:1px solid #f0f0f0;"
+                        onmouseover="this.style.background='#f5f6fa'"
+                        onmouseout="this.style.background=''">
+                        <td style="padding:7px 12px;font-size:12px;font-weight:600;">${m.equipment||''}</td>
+                        <td style="padding:7px 12px;font-size:12px;">${m.service_type||''}</td>
+                        <td style="padding:7px 12px;text-align:center;">
+                            ${due ? `<span style="color:${color};font-weight:700;font-size:12px;">
+                                ${overdue?'⚠️ OVERDUE — ':''}${due}</span>` : '—'}
+                        </td>
+                        <td style="padding:7px 12px;font-size:12px;text-align:right;">
+                            ${fmt_xaf(m.total_cost)}
+                        </td>
+                    </tr>`; }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>` : ''}
+        `;
+
+
+        // Completed Maintenance Section
+        if (d.maint_done && d.maint_done.length > 0) {
+            var total_maint_cost = d.maint_done.reduce(function(s,m){ return s + (parseFloat(m.total_cost)||0); }, 0);
+            html += '<div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;overflow:hidden;margin-top:16px;">';
+            html += '<div style="background:#1E6B3C;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">';
+            html += '<span style="color:#fff;font-weight:700;font-size:14px;">✅ Completed Maintenance</span>';
+            html += '<span style="color:rgba(255,255,255,0.8);font-size:12px;">Total: ' + fmt_xaf(total_maint_cost) + ' XAF</span>';
+            html += '</div>';
+            html += '<table style="width:100%;border-collapse:collapse;">';
+            html += '<thead><tr style="background:#f5f6fa;">';
+            html += '<th style="padding:8px 12px;text-align:left;font-size:11px;">Equipment</th>';
+            html += '<th style="padding:8px 12px;text-align:left;font-size:11px;">Service Type</th>';
+            html += '<th style="padding:8px 12px;text-align:center;font-size:11px;">Date</th>';
+            html += '<th style="padding:8px 12px;text-align:right;font-size:11px;">Cost (XAF)</th>';
+            html += '</tr></thead><tbody>';
+            d.maint_done.forEach(function(m) {
+                html += '<tr onclick="frappe.set_route(\'Form\',\'Maintenance Log\',\'' + m.name + '\')" style="cursor:pointer;border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background=\'#f5f6fa\'" onmouseout="this.style.background=\'\'">'; 
+                html += '<td style="padding:7px 12px;font-size:12px;font-weight:600;">' + (m.equipment||'') + '</td>';
+                html += '<td style="padding:7px 12px;font-size:12px;">' + (m.service_type||'') + '</td>';
+                html += '<td style="padding:7px 12px;font-size:12px;text-align:center;">' + (m.date||'—') + '</td>';
+                html += '<td style="padding:7px 12px;font-size:12px;text-align:right;font-weight:600;color:#1E6B3C;">' + fmt_xaf(m.total_cost) + ' XAF</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+        }
+
+
+                $('#garage-content').html(html);
+        $('#garage-loading').hide();
+        $('#garage-content').show();
+        render_fuel_table(d.fuel_logs || []);
+
+    }
+
+    window.show_services_due = function() {
+        
+        frappe.set_route('List', 'Maintenance Log', {
+            next_service_date: ['<=', frappe.datetime.add_days(frappe.datetime.get_today(), 7)]
+        });
+    };
+
+    function render_fuel_table(logs) {
+        var now = new Date();
+        var month_logs = logs.filter(function(l) {
+            var d = new Date(l.date);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+        if (!month_logs.length) return;
+
+        var html = '<div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;margin-bottom:16px;overflow:hidden;">';
+        html += '<div style="background:#17475E;padding:12px 16px;"><span style="color:#fff;font-weight:700;font-size:14px;">⛽ Fuel Consumption This Month</span></div>';
+        html += '<table style="width:100%;border-collapse:collapse;">';
+        html += '<thead><tr style="background:#f5f6fa;">';
+        html += '<th style="padding:7px 12px;text-align:left;font-size:11px;">Date</th>';
+        html += '<th style="padding:7px 12px;text-align:left;font-size:11px;">Equipment</th>';
+        html += '<th style="padding:7px 12px;text-align:center;font-size:11px;">Type</th>';
+        html += '<th style="padding:7px 12px;text-align:center;font-size:11px;">Source</th>';
+        html += '<th style="padding:7px 12px;text-align:right;font-size:11px;">Liters</th>';
+        html += '<th style="padding:7px 12px;text-align:right;font-size:11px;">Cost (XAF)</th>';
+        html += '</tr></thead><tbody>';
+
+        var total_liters = 0, total_cost = 0;
+        for (var i = 0; i < month_logs.length; i++) {
+            var l = month_logs[i];
+            var liters = parseFloat(l.consumption_liters || 0);
+            var cost = parseFloat(l.fuel_cost || 0);
+            total_liters += liters;
+            total_cost += cost;
+            var bg = i % 2 === 0 ? '#fff' : '#fafafa';
+            var src_label = l.fuel_source === 'Internal Tank' ? 'Internal' : 'External';
+            var src_color = l.fuel_source === 'Internal Tank' ? '#1E6B3C' : '#C9A227';
+            html += '<tr style="background:' + bg + ';border-bottom:1px solid #f0f0f0;">';
+            html += '<td style="padding:6px 12px;font-size:11px;">' + (l.date || '') + '</td>';
+            html += '<td style="padding:6px 12px;font-size:11px;font-weight:600;">' + (l.equipment || '') + '</td>';
+            html += '<td style="padding:6px 12px;text-align:center;font-size:11px;">' + (l.fuel_type || '') + '</td>';
+            html += '<td style="padding:6px 12px;text-align:center;"><span style="color:' + src_color + ';font-size:10px;font-weight:600;">' + src_label + '</span></td>';
+            html += '<td style="padding:6px 12px;text-align:right;font-size:11px;font-weight:600;">' + liters.toFixed(0) + ' L</td>';
+            html += '<td style="padding:6px 12px;text-align:right;font-size:11px;">' + fmt_xaf(cost) + ' XAF</td>';
+            html += '</tr>';
+        }
+
+        html += '</tbody><tfoot><tr style="background:#1F3864;color:#fff;">';
+        html += '<td colspan="4" style="padding:7px 12px;font-size:11px;font-weight:700;">Total</td>';
+        html += '<td style="padding:7px 12px;text-align:right;font-size:11px;font-weight:700;">' + total_liters.toFixed(0) + ' L</td>';
+        html += '<td style="padding:7px 12px;text-align:right;font-size:11px;font-weight:700;">' + fmt_xaf(total_cost) + ' XAF</td>';
+        html += '</tr></tfoot></table></div>';
+
+        document.getElementById('fuel-consumption-section').innerHTML = html;
+    }
+
+    load();
+};
