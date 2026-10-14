@@ -299,6 +299,32 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
                '<div style="padding:8px 14px;font-size:11px;color:' + GREY + ';">Open the request, enter the actual cost of each line from the receipts, attach the receipts, then click Justify. The balance to return is calculated automatically.</div>';
     }
 
+    function spent_html(d) {
+        var sp = d.spent || {};
+        var h = '<div style="padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">';
+        [['Total', fmt_xaf(sp.total) + ' XAF', BLUE],
+         ['On machines', fmt_xaf((sp.by_machine || []).reduce(function(a, x) { return a + (parseFloat(x.amount) || 0); }, 0)) + ' XAF', BLUE],
+         ['Garage overhead', fmt_xaf(sp.overhead) + ' XAF', AMBER],
+         ['Parts for the store', fmt_xaf(sp.store) + ' XAF', TEAL]].forEach(function(x) {
+            h += '<div style="border:1px solid #eef0f5;border-radius:6px;padding:8px;text-align:center;">' +
+                 '<div style="font-size:16px;font-weight:700;color:' + x[2] + ';">' + x[1] + '</div>' +
+                 '<div style="font-size:10px;color:' + GREY + ';">' + x[0] + '</div></div>';
+        });
+        h += '</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:0;">';
+        h += '<div><div style="padding:4px 14px;font-size:11px;font-weight:700;color:' + BLUE + ';">Requests paid / justified</div>' +
+             table(['Request', 'For', 'Payment', 'Navision ref', 'Status', 'Amount (XAF)'], (sp.requests || []).map(function(r) {
+                 var pay = r.payment_method === 'Cash Advance (IOU)' ? 'IOU' : r.payment_method ? 'Proforma / PO' : '—';
+                 return {onclick: go_form('Equipment Expense Request', r.name),
+                         cells: ['<b style="color:' + BLUE + ';">' + esc(r.name) + '</b>', esc(r.label), esc(pay), esc(r.navision),
+                                 r.status === 'EER Justified' ? pill('Justified', GREEN) : pill('Paid', AMBER), fmt_xaf(r.amount)]};
+             }), ['left', 'left', 'center', 'left', 'center', 'right']) + '</div>';
+        h += '<div><div style="padding:4px 14px;font-size:11px;font-weight:700;color:' + BLUE + ';">Top machines by spend</div>' +
+             table(['Machine', 'Category', 'Amount (XAF)'], (sp.by_machine || []).map(function(x) {
+                 return {onclick: go_form('Fleet Equipment', x.equipment), cells: ['<b>' + esc(x.label) + '</b>', esc(x.category), fmt_xaf(x.amount)]};
+             }), ['left', 'left', 'right']) + '</div>';
+        return h + '</div><div style="padding:8px 14px;font-size:11px;color:' + GREY + ';">Justified = actual cost from receipts · Paid = proforma or approved amount until justified.</div>';
+    }
+
     function parts_html(d) {
         var p = d.parts || {};
         if (!p.warehouse) {
@@ -415,6 +441,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         h += '</div>';
         h += card('📊 Fuel consumption check (last 90 days)', TEAL, efficiency_html(d), 'top consumers · flag when > 30% above category median');
         h += card('⏳ Open expense requests', AMBER, requests_html(d), 'draft to approved · oldest first');
+        h += card('💰 Spent (last 30 days)', BLUE, spent_html(d), 'paid and justified requests, charged line by line');
         h += card('💵 Cash advances (IOU) to justify', ((d.ious || []).some(function(r) { return r.age > 14; }) ? RED : AMBER), ious_html(d), 'paid in Navision, receipts not yet entered');
         h += card('🔩 Garage spare parts store', BLUE, parts_html(d), 'live from stock');
         h += card('💤 Idle equipment (30 days)', GREY, idle_html(d), (d.idle || []).length + ' machines');
