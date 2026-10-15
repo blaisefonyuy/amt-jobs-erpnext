@@ -1,0 +1,66 @@
+{
+ "creation": "2026-10-14 00:00:00",
+ "modified": "2026-10-14 15:33:21.842012",
+ "doctype": "Page",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "amt-equipment-history",
+ "page_name": "amt-equipment-history",
+ "standard": "Yes",
+ "title": "Equipment History",
+ "roles": [
+  {
+   "role": "Garage Chief"
+  },
+  {
+   "role": "Fleet Manager"
+  },
+  {
+   "role": "Garage Staff"
+  },
+  {
+   "role": "Fuel Agent"
+  },
+  {
+   "role": "Purchase Officer"
+  },
+  {
+   "role": "AMT Finance"
+  },
+  {
+   "role": "AMT Director of Operations"
+  },
+  {
+   "role": "AMT Director General"
+  },
+  {
+   "role": "AMT Head of Logistics"
+  },
+  {
+   "role": "AMT Sales Manager"
+  },
+  {
+   "role": "AMT Head of Invoicing"
+  },
+  {
+   "role": "Finance Director"
+  },
+  {
+   "role": "AMT Director of Finance"
+  },
+  {
+   "role": "AMT Chief Accountant"
+  },
+  {
+   "role": "AMT Finance Officer"
+  },
+  {
+   "role": "Operations Director"
+  },
+  {
+   "role": "AMT Director"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}

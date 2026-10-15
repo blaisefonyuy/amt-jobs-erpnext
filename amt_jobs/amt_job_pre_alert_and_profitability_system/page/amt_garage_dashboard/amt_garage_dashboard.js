@@ -135,6 +135,22 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
             a.push([RED, '💵 ' + late_iou.length + ' cash advance(s) not justified after 14 days — ' +
                 fmt_xaf(late_iou.reduce(function(s, r) { return s + (parseFloat(r.amount) || 0); }, 0)) + ' XAF outstanding']);
         }
+        (d.refills || []).forEach(function(r) {
+            if (r.docstatus === 0 && r.age >= 1) {
+                a.push([AMBER, '⛽ Diesel refill ' + esc(r.name) + ' (' + esc(r.truck) + ') not submitted after ' + r.age + ' day(s)' +
+                    (r.confirmed ? '' : ' — waiting for ' + esc(r.controller) + ' to confirm')]);
+            }
+            if (r.check && r.check !== 'OK') {
+                a.push([RED, '⛽ Refill ' + esc(r.name) + ', driver ' + esc(r.driver) + ': ' + esc(r.check)]);
+            }
+        });
+        var cs = (d.card || {}).last;
+        if (cs && (cs.not_in_erpnext || cs.differ || cs.not_on_statement)) {
+            a.push([RED, '💳 Fuel card statement ' + esc(cs.name) + ': ' + cs.not_in_erpnext + ' receipt(s) not in ERPNext, ' +
+                cs.differ + ' differing, ' + cs.not_on_statement + ' ERPNext fill(s) not on the statement']);
+        }
+        var nb = ((d.bons || {}).missing || []).length;
+        if (nb) a.push([AMBER, '🧾 ' + nb + ' client job(s) older than 2 days without a signed Bon de Prestation — cannot be billed']);
         var low_parts = ((d.parts || {}).low || []).length;
         if (low_parts) a.push([AMBER, '🔩 ' + low_parts + ' spare part(s) at or below reorder level']);
         if (!a.length) {
@@ -325,6 +341,51 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         return h + '</div><div style="padding:8px 14px;font-size:11px;color:' + GREY + ';">Justified = actual cost from receipts · Paid = proforma or approved amount until justified.</div>';
     }
 
+    function refills_html(d) {
+        var list = d.refills || [];
+        var tb = 0, td = 0, tk = 0;
+        list.forEach(function(r) { if (r.docstatus === 1) { tb += r.bought; td += r.discharged; tk += r.kept; } });
+        var h = '<div style="padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">';
+        [['Bought at station', n0(tb) + ' L', BLUE], ['Emptied into containers', n0(td) + ' L', GREEN],
+         ['Kept by the trucks', n0(tk) + ' L', AMBER], ['Trips', String(list.length), BLUE]].forEach(function(x) {
+            h += '<div style="border:1px solid #eef0f5;border-radius:6px;padding:8px;text-align:center;">' +
+                 '<div style="font-size:16px;font-weight:700;color:' + x[2] + ';">' + x[1] + '</div>' +
+                 '<div style="font-size:10px;color:' + GREY + ';">' + x[0] + '</div></div>';
+        });
+        h += '</div>';
+        h += table(['Refill', 'Date', 'Truck', 'Driver', 'Controlled by', 'Bought', 'Emptied', 'Kept', 'Check'], list.map(function(r) {
+            var state = r.docstatus === 1 ? (r.check && r.check !== 'OK' ? pill('Check', RED) : pill('OK', GREEN))
+                      : (r.confirmed ? pill('To submit', AMBER) : pill('Not confirmed', AMBER));
+            return {onclick: go_form('Diesel Refill', r.name),
+                    cells: ['<b style="color:' + BLUE + ';">' + esc(r.name) + '</b>', esc(r.date), esc(r.truck), esc(r.driver), esc(r.controller),
+                            n0(r.bought) + ' L', n0(r.discharged) + ' L', n0(r.kept) + ' L', state]};
+        }), ['left', 'center', 'left', 'left', 'left', 'right', 'right', 'right', 'center']);
+        var cs = (d.card || {}).last;
+        h += '<div style="padding:8px 14px;font-size:11px;color:' + GREY + ';display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;"><span>' +
+             (cs ? 'Last fuel card statement ' + esc(cs.name) + ' (' + esc(cs.period) + '): ' + cs.not_in_erpnext + ' not in ERPNext · ' + cs.differ + ' differ · ' + cs.not_on_statement + ' not on statement'
+                 : 'No fuel card statement entered yet.') + '</span><span style="display:flex;gap:6px;">' +
+             '<button class="btn btn-xs btn-default" onclick="frappe.new_doc(\'Diesel Refill\')">⛽ New refill trip</button>' +
+             '<button class="btn btn-xs btn-default" onclick="frappe.new_doc(\'Fuel Card Statement\')">💳 New card statement</button></span></div>';
+        return h;
+    }
+
+    function bons_html(d) {
+        var b = d.bons || {};
+        var h = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:0;">';
+        h += '<div><div style="padding:6px 14px;font-size:11px;font-weight:700;color:' + AMBER + ';">Jobs done, signed Bon missing (older than 2 days)</div>' +
+             table(['Usage log', 'Date', 'Machine / crew', 'Client', 'Bon no.', 'Days'], (b.missing || []).slice(0, 20).map(function(u) {
+                 return {onclick: go_form('Equipment Usage Log', u.name),
+                         cells: ['<b style="color:' + BLUE + ';">' + esc(u.name) + '</b>', esc(u.date), esc(u.what), esc(u.client), esc(u.bon || '—'),
+                                 '<b style="color:' + (u.age > 7 ? RED : AMBER) + ';">' + u.age + '</b>']};
+             }), ['left', 'center', 'left', 'left', 'left', 'right']) + '</div>';
+        h += '<div><div style="padding:6px 14px;font-size:11px;font-weight:700;color:' + AMBER + ';">Job requests without the signed client slip</div>' +
+             table(['Job request', 'Client', 'Slip no.', 'Status'], (b.slips_missing || []).slice(0, 20).map(function(j) {
+                 return {onclick: go_form('Job Request', j.name),
+                         cells: ['<b style="color:' + BLUE + ';">' + esc(j.name) + '</b>', esc(j.client), esc(j.slip || '—'), esc(j.status)]};
+             }), ['left', 'left', 'left', 'center']) + '</div>';
+        return h + '</div><div style="padding:8px 14px;font-size:11px;color:' + GREY + ';">A job cannot be marked billed until its Bon de Prestation, signed by the client, is attached.</div>';
+    }
+
     function parts_html(d) {
         var p = d.parts || {};
         if (!p.warehouse) {
@@ -441,6 +502,9 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         h += '</div>';
         h += card('📊 Fuel consumption check (last 90 days)', TEAL, efficiency_html(d), 'top consumers · flag when > 30% above category median');
         h += card('⏳ Open expense requests', AMBER, requests_html(d), 'draft to approved · oldest first');
+        h += card('⛽ Diesel refills by truck (30 days)', ((d.refills || []).some(function(r) { return r.check && r.check !== 'OK'; }) ? RED : TEAL),
+                  refills_html(d), 'station → truck → containers, controlled by Purchasing');
+        h += card('🧾 Client slips & Bons de Prestation', (((d.bons || {}).missing || []).length ? AMBER : GREEN), bons_html(d), 'signed paperwork needed for billing');
         h += card('💰 Spent (last 30 days)', BLUE, spent_html(d), 'paid and justified requests, charged line by line');
         h += card('💵 Cash advances (IOU) to justify', ((d.ious || []).some(function(r) { return r.age > 14; }) ? RED : AMBER), ious_html(d), 'paid in Navision, receipts not yet entered');
         h += card('🔩 Garage spare parts store', BLUE, parts_html(d), 'live from stock');

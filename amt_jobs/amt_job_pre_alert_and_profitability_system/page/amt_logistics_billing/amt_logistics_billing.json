@@ -1,0 +1,30 @@
+{
+ "creation": "2026-10-14 00:00:00",
+ "modified": "2026-10-14 11:41:08.518645",
+ "doctype": "Page",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "amt-logistics-billing",
+ "page_name": "amt-logistics-billing",
+ "standard": "Yes",
+ "title": "Logistics Billing",
+ "roles": [
+  {
+   "role": "AMT Logistics Agent"
+  },
+  {
+   "role": "AMT Sales Manager"
+  },
+  {
+   "role": "AMT Finance"
+  },
+  {
+   "role": "AMT Director of Operations"
+  },
+  {
+   "role": "AMT Director General"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}
