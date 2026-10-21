@@ -94,7 +94,7 @@ def get_wht_clients(conn):
         import re as _re2
         rccm = addr if _re2.match(r'RC/', addr) else ''
         clients[d['No_']] = {
-            'wht_applies':    bool(d['Withholding Tax Applies']),
+            'wht_applies':    bool(d['Withholding Tax Applies']) or get_wht_rate((d['WHT Business Posting Group'] or '').strip()) > 0,
             'wht_group':      (d['WHT Business Posting Group'] or '').strip(),
             'training_tax':   bool(d['_ Training tax']),
             'bank_code':      (d['Payment Bank'] or '').strip(),
@@ -143,6 +143,7 @@ def _do_sync(since_ts=None, full=False):
                 h.[Payment Terms Code]            AS payment_terms,
                 h.[Due Date]                      AS due_date,
                 h.[User ID]                       AS issued_by,
+                h.[Bank AMT]                       AS bank_amt,
                 SUM(l.[Amount])                   AS amount_ht,
                 SUM(l.[Amount Including VAT])     AS amount_ttc
             FROM [AMT_CM$Sales Invoice Header] h
@@ -155,7 +156,7 @@ def _do_sync(since_ts=None, full=False):
                 h.[Posting Date], h.[Job No], h.[Currency Code],
                 h.[Amount Witholding Tax], h.[_ Training tax],
                 h.[Amount Training Tax], h.[Payment Terms Code],
-                h.[Due Date], h.[User ID]
+                h.[Due Date], h.[User ID], h.[Bank AMT]
             ORDER BY h.[Posting Date] DESC
         """)
         rows = cur.fetchall()
@@ -378,7 +379,7 @@ def _do_sync(since_ts=None, full=False):
                 # NIU and RCCM from customer master (all clients)
                 doc.client_niu          = client_wht.get('client_niu', '')
                 doc.client_rccm         = client_wht.get('client_rccm', '') or (d.get('client_address') or '').strip()
-                doc.client_bank_code    = client_wht.get('bank_code', '')
+                doc.client_bank_code    = (d.get('bank_amt') or '').strip() or client_wht.get('bank_code', '')
                 doc.vat_exempt_ref      = client_cfg_ref
                 doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
                 doc.payment_terms       = (d.get('payment_terms') or '').strip()
@@ -606,6 +607,7 @@ def sync_single_invoice(invoice_no):
                 h.[Payment Terms Code]            AS payment_terms,
                 h.[Due Date]                      AS due_date,
                 h.[User ID]                       AS issued_by,
+                h.[Bank AMT]                       AS bank_amt,
                 SUM(l.[Amount])                   AS amount_ht,
                 SUM(l.[Amount Including VAT])     AS amount_ttc
             FROM [AMT_CM$Sales Invoice Header] h
@@ -618,7 +620,7 @@ def sync_single_invoice(invoice_no):
                 h.[Posting Date], h.[Job No], h.[Currency Code],
                 h.[Amount Witholding Tax], h.[_ Training tax],
                 h.[Amount Training Tax], h.[Payment Terms Code],
-                h.[Due Date], h.[User ID]
+                h.[Due Date], h.[User ID], h.[Bank AMT]
         """, invoice_no)
 
         row = cur.fetchone()
@@ -796,7 +798,7 @@ def sync_single_invoice(invoice_no):
         doc.client_vat_no       = (d.get('client_vat_no') or '').strip()
         doc.client_niu          = client_wht.get('client_niu', '')
         doc.client_rccm         = client_wht.get('client_rccm', '') or (d.get('client_address') or '').strip()
-        doc.client_bank_code    = client_wht.get('bank_code', '')
+        doc.client_bank_code    = (d.get('bank_amt') or '').strip() or client_wht.get('bank_code', '')
         doc.vat_exempt_ref      = client_cfg_ref
         doc.issued_by           = (d.get('issued_by') or '').strip().replace('AMT\\', '').replace('AMTCM\\', '')
         doc.payment_terms       = (d.get('payment_terms') or '').strip()
