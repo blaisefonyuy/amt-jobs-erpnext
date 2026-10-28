@@ -17,27 +17,60 @@ frappe.pages['amt-equipment-history'].on_page_load = function (wrapper) {
     };
     var state = { data: null, kind: 'All' };
 
-    page.add_field({
-        fieldtype: 'Link', label: 'Machine', fieldname: 'equipment', options: 'Fleet Equipment',
-        change: function () { load(); }
-    });
-    page.add_field({
-        fieldtype: 'Select', label: 'Period', fieldname: 'period', default: 'Last 3 Months',
-        options: ['This Month', 'Last Month', 'Last 3 Months', 'Last 6 Months', 'This Year', 'Last 12 Months', 'Everything'],
-        change: function () { load(); }
-    });
+    // machine + period pickers live inside the page (no page form fields, no route_options hand-off)
+    var cur = { eq: '', period: 'Last 12 Months' };
+    var PERIODS = ['This Month', 'Last Month', 'Last 3 Months', 'Last 6 Months', 'This Year', 'Last 12 Months', 'Everything'];
     page.set_primary_action('🖨 Print', function () { print_sheet(); });
     page.add_action_item('Open machine', function () {
-        var e = page.fields_dict.equipment.get_value();
-        if (e) frappe.set_route('Form', 'Fleet Equipment', e);
+        if (cur.eq) frappe.set_route('Form', 'Fleet Equipment', cur.eq);
     });
     page.add_action_item('Garage dashboard', function () { frappe.set_route('amt-garage-dashboard'); });
 
+    var opts = PERIODS.map(function (p) { return '<option' + (p === cur.period ? ' selected' : '') + '>' + p + '</option>'; }).join('');
     $(wrapper).find('.page-content').html(
         '<div id="eh" style="padding:16px;font-family:Arial,sans-serif;">' +
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">' +
+        '<div><div style="font-size:12px;color:#555;margin-bottom:4px;">Machine</div>' +
+        '<select id="eh-eq" class="form-control" style="min-width:360px;"><option value="">Loading machines…</option></select></div>' +
+        '<div><div style="font-size:12px;color:#555;margin-bottom:4px;">Period</div>' +
+        '<select id="eh-period" class="form-control" style="min-width:180px;">' + opts + '</select></div></div>' +
         '<div id="eh-empty" style="text-align:center;padding:60px;color:#888;"><div style="font-size:36px;">🚜</div>' +
         '<div>Choose a machine to see everything that happened to it.</div></div>' +
         '<div id="eh-body" style="display:none;"></div></div>');
+
+    var machines_loaded = false;
+    frappe.call({
+        method: 'frappe.client.get_list',
+        args: { doctype: 'Fleet Equipment', fields: ['name', 'equipment_name', 'category'], order_by: 'equipment_name asc', limit_page_length: 0 },
+        callback: function (r) {
+            var list = r.message || [];
+            var html = '<option value="">— choose a machine (' + list.length + ') —</option>';
+            list.forEach(function (m) {
+                html += '<option value="' + frappe.utils.escape_html(m.name) + '">' + frappe.utils.escape_html((m.equipment_name || m.name) +
+                    (m.category ? '  ·  ' + m.category : '') + '  (' + m.name + ')') + '</option>';
+            });
+            $(wrapper).find('#eh-eq').html(html).val(cur.eq || '');
+            machines_loaded = true;
+        },
+        error: function () {
+            $(wrapper).find('#eh-eq').html('<option value="">Cannot read the machine list (permission?)</option>');
+        }
+    });
+    $(wrapper).on('change', '#eh-eq', function () {
+        open_machine($(this).val());
+    });
+    $(wrapper).on('change', '#eh-period', function () {
+        cur.period = $(this).val(); load();
+    });
+
+    function open_machine(eq) {
+        cur.eq = eq || '';
+        if (machines_loaded) $(wrapper).find('#eh-eq').val(cur.eq);
+        try {   // keep the machine in the address so the page can be bookmarked / refreshed
+            window.history.replaceState(null, '', '/app/amt-equipment-history' + (cur.eq ? '/' + encodeURIComponent(cur.eq) : ''));
+        } catch (e) { /* ignore */ }
+        load();
+    }
 
     function range(p) {
         var t = frappe.datetime.get_today(), y = t.substr(0, 4);
@@ -65,15 +98,25 @@ frappe.pages['amt-equipment-history'].on_page_load = function (wrapper) {
     }
 
     function load() {
-        var e = page.fields_dict.equipment.get_value();
-        if (!e) { $('#eh-body').hide(); $('#eh-empty').show(); return; }
-        var r = range(page.fields_dict.period.get_value() || 'Last 3 Months');
+        var e = cur.eq;
+        if (!e) { $('#eh-body').hide(); $('#eh-empty').html('<div style="font-size:36px;">🚜</div><div>Choose a machine to see everything that happened to it.</div>').show(); return; }
+        var r = range(cur.period || 'Last 12 Months');
         $('#eh-empty').html('<div style="font-size:36px;">⏳</div><div>Loading…</div>').show();
         $('#eh-body').hide();
         frappe.call({
             method: 'amt_equipment_history', args: { equipment: e, date_from: r[0], date_to: r[1] },
-            callback: function (res) { state.data = res.message; render(); },
-            error: function () { $('#eh-empty').html('<div style="font-size:36px;">⚠️</div><div>Could not load this machine.</div>'); }
+            callback: function (res) {
+                if (!res || !res.message) {
+                    $('#eh-empty').html('<div style="font-size:36px;">⚠️</div><div>The server returned nothing for ' + esc(e) + '.</div>');
+                    return;
+                }
+                state.data = res.message; render();
+            },
+            error: function (xhr) {
+                var msg = '';
+                try { msg = JSON.parse(JSON.parse(xhr.responseText)._server_messages)[0]; msg = JSON.parse(msg).message; } catch (x) { msg = (xhr && xhr.statusText) || ''; }
+                $('#eh-empty').html('<div style="font-size:36px;">⚠️</div><div>Could not load ' + esc(e) + '.</div><div style="margin-top:8px;color:#C00000;">' + esc(frappe.utils.strip_html ? frappe.utils.strip_html(msg) : msg) + '</div>');
+            }
         });
     }
 
@@ -210,11 +253,12 @@ frappe.pages['amt-equipment-history'].on_page_load = function (wrapper) {
     }
 
     wrapper.eh_open = function () {
+        // machine from the address (/app/amt-equipment-history/EQP-...), or from the old History button
+        var route = frappe.get_route() || [];
         var ro = frappe.route_options || {};
-        if (ro.equipment) {
-            frappe.route_options = null;
-            page.fields_dict.equipment.set_value(ro.equipment);   // triggers load()
-        }
+        var eq = route[1] || ro.equipment || '';
+        if (ro.equipment) frappe.route_options = null;
+        if (eq && eq !== cur.eq) open_machine(eq);
     };
 };
 

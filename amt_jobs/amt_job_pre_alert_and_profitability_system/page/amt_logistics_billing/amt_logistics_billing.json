@@ -1,6 +1,6 @@
 {
  "creation": "2026-10-14 00:00:00",
- "modified": "2026-10-14 11:41:08.518645",
+ "modified": "2026-10-27 17:19:39.204471",
  "doctype": "Page",
  "module": "AMT Job Pre-Alert and Profitability System",
  "name": "amt-logistics-billing",
@@ -10,6 +10,15 @@
  "roles": [
   {
    "role": "AMT Logistics Agent"
+  },
+  {
+   "role": "AMT Head of Logistics"
+  },
+  {
+   "role": "AMT Head of Oil Base"
+  },
+  {
+   "role": "AMT Oil Base Agent"
   },
   {
    "role": "AMT Sales Manager"
