@@ -16,6 +16,75 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
     page.add_action_item('🔧 New Maintenance Log', function() { frappe.new_doc('Maintenance Log'); });
     page.add_action_item('📝 New Expense Request', function() { frappe.new_doc('Equipment Expense Request'); });
 
+    // ---- date ranges (30 Oct 2026): one period for the page, and each section can have its own dates
+    var RANGE = {busy: false, sec: {}};
+    var SEC_KEYS = {diesel: ['diesel'], efficiency: ['efficiency', 'anomalies'], refills: ['refills'], bons: ['bons'],
+                    spent: ['spent'], parts: ['parts'], idle: ['idle'], fuel_month: ['month_logs', 'month_fuel_cost', 'month_station_l'],
+                    done_maint: ['done_maint']};
+    var SEC_TITLES = {'⛽ Internal diesel — containers': 'diesel', '📊 Fuel consumption check (last 90 days)': 'efficiency',
+                      '⛽ Diesel refills by truck (30 days)': 'refills', '🧾 Client slips & Bons de Prestation': 'bons',
+                      '💰 Spent (last 30 days)': 'spent', '🔩 Garage spare parts store': 'parts', '💤 Idle equipment (30 days)': 'idle',
+                      '⛽ Fuel this month': 'fuel_month', '✅ Completed maintenance (90 days)': 'done_maint'};
+    var PRESETS = [{value: 'live', label: __('Live (last 30 / 90 days)')}, {value: 'this_month', label: __('This month')},
+                   {value: 'last_month', label: __('Last month')}, {value: 'this_quarter', label: __('This quarter')},
+                   {value: 'last_quarter', label: __('Last quarter')}, {value: 'this_year', label: __('This year')},
+                   {value: 'custom', label: __('Dates of my choice')}];
+    function range_of(p) {
+        var m = moment();
+        if (p === 'last_month') m = m.subtract(1, 'month');
+        if (p === 'last_quarter') m = m.subtract(1, 'quarter');
+        var unit = p.indexOf('month') >= 0 ? 'month' : (p.indexOf('quarter') >= 0 ? 'quarter' : 'year');
+        return [m.clone().startOf(unit).format('YYYY-MM-DD'), m.clone().endOf(unit).format('YYYY-MM-DD')];
+    }
+    function g_range() { var a = f_from.get_value(), b = f_to.get_value(); return (a && b) ? [a, b] : null; }
+    function rng_of(key) { return RANGE.sec[key] || g_range(); }
+    function d2u(x) { return x ? frappe.datetime.str_to_user(x) : ''; }
+    var f_per = page.add_field({fieldtype: 'Select', fieldname: 'g_period', label: __('Period'), options: PRESETS, default: 'live',
+        change: function() {
+            if (RANGE.busy) return;
+            var v = f_per.get_value();
+            if (v === 'custom') return;
+            var r = v === 'live' ? ['', ''] : range_of(v);
+            RANGE.busy = true; f_from.set_value(r[0]); f_to.set_value(r[1]);
+            setTimeout(function() { RANGE.busy = false; load(); }, 80);
+        }});
+    var f_from = page.add_field({fieldtype: 'Date', fieldname: 'g_from', label: __('From'), change: function() { dates_changed(); }});
+    var f_to = page.add_field({fieldtype: 'Date', fieldname: 'g_to', label: __('To'), change: function() { dates_changed(); }});
+    function dates_changed() {
+        if (RANGE.busy || !f_from.get_value() || !f_to.get_value()) return;
+        if (f_per.get_value() !== 'custom') { RANGE.busy = true; f_per.set_value('custom'); setTimeout(function() { RANGE.busy = false; }, 80); }
+        load();
+    }
+    function section_dates(key, title) {
+        var cur = RANGE.sec[key] || g_range() || ['', ''];
+        var dlg = new frappe.ui.Dialog({
+            title: __('Dates for this section') + ': ' + title,
+            fields: [
+                {fieldtype: 'Select', fieldname: 'preset', label: __('Period'),
+                 options: [{value: 'page', label: __('Same as the page')}].concat(PRESETS.slice(1)),
+                 default: RANGE.sec[key] ? 'custom' : 'page',
+                 onchange: function() {
+                     var v = dlg.get_value('preset');
+                     if (v !== 'page' && v !== 'custom') { var r = range_of(v); dlg.set_value('from_date', r[0]); dlg.set_value('to_date', r[1]); }
+                 }},
+                {fieldtype: 'Date', fieldname: 'from_date', label: __('From'), default: cur[0]},
+                {fieldtype: 'Date', fieldname: 'to_date', label: __('To'), default: cur[1]}],
+            primary_action_label: __('Apply'),
+            primary_action: function(v) {
+                if (v.preset === 'page') delete RANGE.sec[key];
+                else if (v.from_date && v.to_date) {
+                    if (v.from_date > v.to_date) { frappe.msgprint(__('The start date is after the end date.')); return; }
+                    RANGE.sec[key] = [v.from_date, v.to_date];
+                }
+                dlg.hide(); load();
+            }});
+        dlg.show();
+    }
+    window.$(wrapper).on('click', '.amt-sec-range', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        section_dates(window.$(this).attr('data-sec'), window.$(this).attr('data-title'));
+    });
+
     var $ = window.$;
     $(wrapper).find('.page-content').html(
         '<div id="garage-dash" style="padding:16px;font-family:Arial,sans-serif;">' +
@@ -41,6 +110,14 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         return i > 0 ? wh.substr(0, i) : wh;
     }
     function card(title, color, inner, right) {
+        var key = SEC_TITLES[title];
+        if (key) {
+            var r = rng_of(key), base = title.replace(/\s*\((last )?\d+ days\)/, '').replace(' this month', '');
+            title = (r ? base + ' · ' + d2u(r[0]) + ' → ' + d2u(r[1]) : title) +
+                ' <a class="amt-sec-range" data-sec="' + key + '" data-title="' + frappe.utils.escape_html(base) + '" ' +
+                'style="color:#fff;opacity:.85;font-size:11px;font-weight:400;margin-left:8px;cursor:pointer;text-decoration:underline;' +
+                (RANGE.sec[key] ? 'background:rgba(255,255,255,.18);padding:1px 6px;border-radius:8px;' : '') + '">📅 ' + __('dates') + '</a>';
+        }
         return '<div style="background:#fff;border:1px solid #e0e4ee;border-radius:8px;margin-bottom:16px;overflow:hidden;">' +
             '<div style="background:' + color + ';padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
             '<span style="color:#fff;font-weight:700;font-size:14px;">' + title + '</span>' +
@@ -90,9 +167,25 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
     function load() {
         $('#garage-loading').show().html('<div style="font-size:36px;">⏳</div><div>Loading garage operations...</div>');
         $('#garage-content').hide();
+        var g = g_range() || ['', ''];
+        var secs = Object.keys(RANGE.sec);
         frappe.call({
             method: 'amt_garage_ops',
-            callback: function(r) { render(r.message || {}); },
+            args: {from_date: g[0], to_date: g[1]},
+            callback: function(r) {
+                var d = r.message || {};
+                var pending = secs.length;
+                if (!pending) { render(d); return; }
+                secs.forEach(function(k) {
+                    frappe.call({method: 'amt_garage_ops', args: {from_date: RANGE.sec[k][0], to_date: RANGE.sec[k][1]},
+                        callback: function(r2) {
+                            var d2 = r2.message || {};
+                            (SEC_KEYS[k] || []).forEach(function(x) { d[x] = d2[x]; });
+                            pending -= 1; if (!pending) render(d);
+                        },
+                        error: function() { pending -= 1; if (!pending) render(d); }});
+                });
+            },
             error: function() {
                 $('#garage-loading').html('<div style="color:' + RED + ';">Could not load garage data (API script amt_garage_ops missing or failing). See Error Log.</div>');
             }
@@ -242,7 +335,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         });
         h += '</div>';
         h += '<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;">' +
-             '<div style="font-size:11px;color:#666;">Avg price <b>' + n0(avg) + ' XAF/L</b> · Stock value <b>' + fmt_xaf(value) + ' XAF</b> · This month <b>' +
+             '<div style="font-size:11px;color:#666;">Avg price <b>' + n0(avg) + ' XAF/L</b> · Stock value <b>' + fmt_xaf(value) + ' XAF</b> · ' + (rng_of('diesel') ? __('In the period') : 'This month') + ' <b>' +
              n0(dz.issued_month) + ' L</b> issued from containers · <b>' + n0(d.month_station_l) + ' L</b> bought at stations</div>' +
              '<div style="display:flex;flex-wrap:wrap;gap:6px;">' +
              '<button class="btn btn-xs btn-default" onclick="frappe.new_doc(\'Fuel Consumption Log\')">⛽ New Fuel Log</button>' +
@@ -403,7 +496,7 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
              table(['Part', 'In store', 'Reorder at'], (p.low || []).map(function(x) {
                  return {onclick: go_form('Item', x.item_code), cells: ['<b>' + esc(x.item_name || x.item_code) + '</b>', n0(x.qty), n0(x.level)]};
              }), ['left', 'right', 'right']) + '</div>';
-        h += '<div><div style="padding:4px 14px;font-size:11px;font-weight:700;color:' + BLUE + ';">Most used (30 days)</div>' +
+        h += '<div><div style="padding:4px 14px;font-size:11px;font-weight:700;color:' + BLUE + ';">' + (rng_of('parts') ? __('Most used in the period') : 'Most used (30 days)') + '</div>' +
              table(['Part', 'Qty out', 'Value (XAF)'], (p.used30 || []).map(function(x) {
                  return {onclick: go_form('Item', x.item_code), cells: ['<b>' + esc(x.item_name || x.item_code) + '</b>', n0(x.qty), fmt_xaf(x.value)]};
              }), ['left', 'right', 'right']) + '</div>';
@@ -476,7 +569,8 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
 
         var h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">' +
                 '<div><span style="color:' + BLUE + ';font-size:16px;font-weight:700;">Garage Operations</span>' +
-                '<span style="color:' + GREY + ';font-size:12px;margin-left:12px;">As of ' + esc(d.today) + '</span></div></div>';
+                '<span style="color:' + GREY + ';font-size:12px;margin-left:12px;">As of ' + esc(d.today) +
+                (g_range() ? ' · ' + __('Period') + ' ' + esc(d2u(g_range()[0])) + ' → ' + esc(d2u(g_range()[1])) : '') + '</span></div></div>';
 
         h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;">';
         h += kpi(avail + ' / ' + total, 'Available now', inuse + ' in use', GREEN, "amt_fleet_list({status:'Available'})");
@@ -490,7 +584,8 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
         var iou_amt = (d.ious || []).reduce(function(s, r) { return s + (parseFloat(r.amount) || 0); }, 0);
         var iou_old = (d.ious || []).reduce(function(m, r) { return Math.max(m, r.age || 0); }, 0);
         h += kpi(fmt_xaf(iou_amt), 'Cash advances to justify', (d.ious || []).length + ' IOU · oldest ' + iou_old + ' d', iou_old > 14 ? RED : (d.ious || []).length ? AMBER : GREEN, '');
-        h += kpi(fmt_xaf(d.month_fuel_cost), 'Fuel cost this month', 'submitted logs', TEAL, '');
+        var fr = rng_of('fuel_month');
+        h += kpi(fmt_xaf(d.month_fuel_cost), fr ? __('Fuel cost') : 'Fuel cost this month', fr ? d2u(fr[0]) + ' → ' + d2u(fr[1]) : 'submitted logs', TEAL, '');
         h += '</div>';
 
         h += alerts_html(d);

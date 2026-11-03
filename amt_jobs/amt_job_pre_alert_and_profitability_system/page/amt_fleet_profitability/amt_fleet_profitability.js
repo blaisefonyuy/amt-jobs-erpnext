@@ -1,6 +1,15 @@
 frappe.pages['amt-fleet-profitability'].on_page_load = function(wrapper) {
     const page = frappe.ui.make_app_page({parent: wrapper, title: '📈 Fleet Profitability Analysis', single_column: true});
-    page.add_field({fieldtype:'Select', label:'Period', fieldname:'period', options:['This Month','Last Month','Last 3 Months','Last 6 Months','This Year'], default:'This Year', change() { load(); }});
+    page.add_field({fieldtype:'Select', label:'Period', fieldname:'period', options:['This Month','Last Month','Last 3 Months','Last 6 Months','This Year','Last Year','Dates of my choice'], default:'This Year', change() { if(!window.__amt_pf_busy) load(); }});
+    page.add_field({fieldtype:'Date', label:__('From'), fieldname:'from_date', change() { amt_pf_dates(); }});
+    page.add_field({fieldtype:'Date', label:__('To'), fieldname:'to_date', change() { amt_pf_dates(); }});
+    function amt_pf_dates() {
+        if (window.__amt_pf_busy || !page.fields_dict.from_date.get_value() || !page.fields_dict.to_date.get_value()) return;
+        if (page.fields_dict.period.get_value() !== 'Dates of my choice') {
+            window.__amt_pf_busy = 1; page.fields_dict.period.set_value('Dates of my choice');
+            setTimeout(function() { window.__amt_pf_busy = 0; load(); }, 80);
+        } else load();
+    }
     page.add_field({fieldtype:'Select', label:'Category', fieldname:'category', options:['All','Crane','Forklift','Truck','Generator','Pickup','Other'], default:'All', change() { load(); }});
     page.add_action_item('🔄 Refresh', () => load());
     page.add_action_item('📊 Garage Dashboard', () => frappe.set_route('amt-garage-dashboard'));
@@ -9,6 +18,8 @@ frappe.pages['amt-fleet-profitability'].on_page_load = function(wrapper) {
     var BLUE='#1F3864', GOLD='#C9A227', GREEN='#1E6B3C', RED='#C00000';
     function get_date_range(period) {
         var today=frappe.datetime.get_today(), y=parseInt(today.substr(0,4)), m=parseInt(today.substr(5,2));
+        if(period==='Dates of my choice'){var fa=page.fields_dict.from_date.get_value(),fb=page.fields_dict.to_date.get_value();if(fa&&fb)return [fa,fb];}
+        if(period==='Last Year') return [(y-1)+'-01-01',(y-1)+'-12-31'];
         if(period==='This Month') return [today.substr(0,7)+'-01',today];
         if(period==='Last Month'){var lm=m===1?12:m-1,ly=m===1?y-1:y,lms=String(lm).padStart(2,'0'),days=new Date(ly,lm,0).getDate();return [ly+'-'+lms+'-01',ly+'-'+lms+'-'+days];}
         if(period==='Last 3 Months') return [frappe.datetime.add_months(today,-3).substr(0,7)+'-01',today];
@@ -22,6 +33,8 @@ frappe.pages['amt-fleet-profitability'].on_page_load = function(wrapper) {
         var period=page.fields_dict.period.get_value()||'This Year';
         var category=page.fields_dict.category.get_value()||'All';
         var dr=get_date_range(period), date_from=dr[0], date_to=dr[1];
+        if(period!=='Dates of my choice'){window.__amt_pf_busy=1;page.fields_dict.from_date.set_value(date_from);page.fields_dict.to_date.set_value(date_to);setTimeout(function(){window.__amt_pf_busy=0;},300);}
+        else period=frappe.datetime.str_to_user(date_from)+' → '+frappe.datetime.str_to_user(date_to);
         var af={category:['!=','']};
         if(category!=='All') af.category=category;
         var _a=[],_u=[],_m=[],_f=[],_e=[],_done=0;
