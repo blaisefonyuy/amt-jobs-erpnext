@@ -618,3 +618,95 @@ frappe.pages['amt-garage-dashboard'].on_page_load = function(wrapper) {
 
     load();
 };
+
+// ---- AMT i18n (30 Oct 2026, deploy_bilingual.py): shows this page in the user's language ----
+// Texts are looked up in the Translation list (frappe._messages). Do not edit below this line.
+(function () {
+    if (!window.amt_i18n) {
+        var SKIP = {SCRIPT: 1, STYLE: 1, TEXTAREA: 1, INPUT: 1, SELECT: 0, CODE: 1, PRE: 1};
+        var DATA = /\d|^[A-Z]{1,3}$|^(XAF|L|h|km|M|K|%|x|·|—|–|-|→|\||\/)$|^[^A-Za-zÀ-ÿ]+$/;
+        var tr = function (s) {
+            var m = frappe._messages || {};
+            var t = (s || '').trim();
+            if (!t || !/[A-Za-zÀ-ÿ]{2}/.test(t)) return s;
+            if (m[t]) return s.replace(t, m[t]);
+            // numbers / names around a known text: "12 Bons, paperwork complete", "Diesel low: 120 L"
+            var w = t.split(/\s+/);
+            for (var i = 0; i <= Math.min(3, w.length - 1); i++) {
+                if (i > 0 && !DATA.test(w[i - 1])) break;
+                for (var j = w.length; j > i; j--) {
+                    var key = w.slice(i, j).join(' ');
+                    var tail = w.slice(j);
+                    var ok_tail = !tail.length || /[:\-–—(]$/.test(key) || tail.every(function (x) { return DATA.test(x); });
+                    var bare = key.replace(/\s*:$/, ''), sep = key.slice(bare.length);
+                    if (ok_tail && /[A-Za-zÀ-ÿ]{2}/.test(key) && (m[key] && (i > 0 || j < w.length) || (sep && m[bare]))) {
+                        var out = w.slice(0, i).concat([m[key] || (m[bare] + sep)]).concat(tail).join(' ');
+                        return s.replace(t, out);
+                    }
+                }
+            }
+            return s;
+        };
+        var walk = function (node) {
+            if (!node) return;
+            if (node.nodeType === 3) {
+                var v = node.nodeValue, n = tr(v);
+                if (n !== v) node.nodeValue = n;
+                return;
+            }
+            if (node.nodeType !== 1 || SKIP[node.nodeName] === 1 || node.isContentEditable) return;
+            ['placeholder', 'title', 'data-original-title'].forEach(function (att) {
+                var v = node.getAttribute && node.getAttribute(att);
+                if (v) { var n = tr(v); if (n !== v) node.setAttribute(att, n); }
+            });
+            for (var i = 0; i < node.childNodes.length; i++) walk(node.childNodes[i]);
+        };
+        var html = function (h) {
+            if (!h || typeof h !== 'string') return h;
+            return h.replace(/>([^<>]+)</g, function (all, txt) { return '>' + tr(txt) + '<'; })
+                    .replace(/<title>([^<]*)<\/title>/, function (all, txt) { return '<title>' + tr(txt) + '</title>'; });
+        };
+        var watch = function (root) {
+            if (!root || root.__amt_i18n) return;
+            root.__amt_i18n = 1;
+            walk(root);
+            var busy = false;
+            new MutationObserver(function (list) {
+                if (busy) return;
+                busy = true;
+                list.forEach(function (r) {
+                    if (r.type === 'characterData') walk(r.target);
+                    (r.addedNodes || []).forEach(function (n) { walk(n); });
+                });
+                busy = false;
+            }).observe(root, {childList: true, subtree: true, characterData: true});
+            // print windows opened by the page
+            if (!window.__amt_open) {
+                window.__amt_open = window.open;
+                window.open = function () {
+                    var w = window.__amt_open.apply(window, arguments);
+                    try {
+                        if (w && w.document && !w.document.__amt) {
+                            var dw = w.document.write.bind(w.document);
+                            w.document.write = function (h) { return dw(html(h)); };
+                            w.document.__amt = 1;
+                        }
+                    } catch (e) { /* other origin */ }
+                    return w;
+                };
+            }
+        };
+        window.amt_i18n = {tr: tr, html: html, walk: walk, watch: watch};
+    }
+    var PAGE = 'amt-garage-dashboard';
+    var pg = frappe.pages[PAGE];
+    if (pg && pg.on_page_load && !pg.__amt_i18n) {
+        var load = pg.on_page_load;
+        pg.on_page_load = function (wrapper) {
+            var r = load.apply(this, arguments);
+            window.amt_i18n.watch(wrapper);
+            return r;
+        };
+        pg.__amt_i18n = 1;
+    }
+})();

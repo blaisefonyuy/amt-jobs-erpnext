@@ -1,0 +1,305 @@
+{
+ "charts": [],
+ "content": "[{\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Logistics Billing\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Job Requests\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bons de Prestation\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Client Tariffs\", \"col\": 3}}, {\"id\": \"s5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Garage Operations\", \"col\": 3}}, {\"id\": \"s6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Fleet Equipment\", \"col\": 3}}, {\"id\": \"s7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Equipment History\", \"col\": 3}}, {\"id\": \"s8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Fleet Profitability\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"c9\", \"type\": \"card\", \"data\": {\"card_name\": \"Billing\", \"col\": 4}}, {\"id\": \"c10\", \"type\": \"card\", \"data\": {\"card_name\": \"Garage\", \"col\": 4}}, {\"id\": \"c11\", \"type\": \"card\", \"data\": {\"card_name\": \"Diesel\", \"col\": 4}}]",
+ "creation": "2026-11-05 18:06:33.631975",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "truck",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Garage and Billing",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Billing",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Job Request",
+   "link_count": 0,
+   "link_to": "Job Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Usage Log",
+   "link_count": 0,
+   "link_to": "Equipment Usage Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Client Tariff",
+   "link_count": 0,
+   "link_to": "Client Tariff",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Logistics Billing",
+   "link_count": 0,
+   "link_to": "amt-logistics-billing",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Garage",
+   "link_count": 5,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fleet Equipment",
+   "link_count": 0,
+   "link_to": "Fleet Equipment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Maintenance Log",
+   "link_count": 0,
+   "link_to": "Maintenance Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment Expense Request",
+   "link_count": 0,
+   "link_to": "Equipment Expense Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Garage Operations",
+   "link_count": 0,
+   "link_to": "amt-garage-dashboard",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Equipment History",
+   "link_count": 0,
+   "link_to": "amt-equipment-history",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Diesel",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fuel Consumption Log",
+   "link_count": 0,
+   "link_to": "Fuel Consumption Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Diesel Refill",
+   "link_count": 0,
+   "link_to": "Diesel Refill",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fuel Card Statement",
+   "link_count": 0,
+   "link_to": "Fuel Card Statement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-11-05 18:09:55.316319",
+ "modified_by": "Administrator",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "Garage and Billing",
+ "number_cards": [],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "AMT Head of Logistics"
+  },
+  {
+   "role": "AMT Logistics Agent"
+  },
+  {
+   "role": "AMT Head of Oil Base"
+  },
+  {
+   "role": "AMT Oil Base Agent"
+  },
+  {
+   "role": "AMT Sales Manager"
+  },
+  {
+   "role": "AMT Head of Invoicing"
+  },
+  {
+   "role": "AMT Finance"
+  },
+  {
+   "role": "AMT Finance Officer"
+  },
+  {
+   "role": "AMT Chief Accountant"
+  },
+  {
+   "role": "AMT Director of Finance"
+  },
+  {
+   "role": "Finance Director"
+  },
+  {
+   "role": "AMT Invoicing Agent"
+  },
+  {
+   "role": "AMT Invoicing Officer"
+  },
+  {
+   "role": "AMT Director"
+  },
+  {
+   "role": "AMT Director General"
+  },
+  {
+   "role": "AMT Director of Operations"
+  },
+  {
+   "role": "Operations Director"
+  },
+  {
+   "role": "Garage Chief"
+  },
+  {
+   "role": "Fleet Manager"
+  },
+  {
+   "role": "BDM Manager"
+  },
+  {
+   "role": "Garage Staff"
+  },
+  {
+   "role": "Fuel Agent"
+  },
+  {
+   "role": "Purchase Officer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 3.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Logistics Billing",
+   "link_to": "amt-logistics-billing",
+   "type": "Page"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Job Requests",
+   "link_to": "Job Request",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Bons de Prestation",
+   "link_to": "Equipment Usage Log",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Client Tariffs",
+   "link_to": "Client Tariff",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "",
+   "label": "Garage Operations",
+   "link_to": "amt-garage-dashboard",
+   "type": "Page"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Fleet Equipment",
+   "link_to": "Fleet Equipment",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "",
+   "label": "Equipment History",
+   "link_to": "amt-equipment-history",
+   "type": "Page"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "label": "Fleet Profitability",
+   "link_to": "amt-fleet-profitability",
+   "type": "Page"
+  }
+ ],
+ "title": "Garage and Billing"
+}
