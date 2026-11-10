@@ -1,0 +1,27 @@
+{
+ "doctype": "Page",
+ "icon": "",
+ "module": "AMT Job Pre-Alert and Profitability System",
+ "name": "amt-purchasing",
+ "page_name": "amt-purchasing",
+ "roles": [
+  {
+   "role": "Purchase Officer"
+  },
+  {
+   "role": "Purchase Manager"
+  },
+  {
+   "role": "Purchase User"
+  },
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "AMT Director of Operations"
+  }
+ ],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "Purchasing desk"
+}
