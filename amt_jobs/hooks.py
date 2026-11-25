@@ -289,3 +289,5 @@ doc_events = {
 permission_query_conditions = {
     "AMT Job File": "amt_jobs.permissions.get_permission_query_conditions"
 }
+
+jinja = {"methods": ["amt_jobs.quotation_qr.quotation_qr"]}
